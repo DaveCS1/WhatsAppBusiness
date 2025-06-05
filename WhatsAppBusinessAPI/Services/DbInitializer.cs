@@ -19,68 +19,39 @@ namespace WhatsAppBusinessAPI.Services
                 throw new InvalidOperationException("Database connection string is missing.");
             }
 
-            // Ensure the Data directory exists
-            var dbFilePath = Path.Combine(AppContext.BaseDirectory, "Data", "whatsapp.db");
-            var dbDirectory = Path.GetDirectoryName(dbFilePath);
-            if (!Directory.Exists(dbDirectory))
-            {
-                Directory.CreateDirectory(dbDirectory!);
-                logger.LogInformation($"Created database directory: {dbDirectory}");
-            }
-
             try
             {
                 using var connection = new SqliteConnection(connectionString);
                 await connection.OpenAsync();
                 logger.LogInformation("Database connection opened successfully.");
 
-                // Read the SQL script file
-                var sqlScriptPath = Path.Combine(AppContext.BaseDirectory, "Data", "create_database.sql");
-                if (!File.Exists(sqlScriptPath))
+                // Verify that the required tables exist
+                var requiredTables = new[] { "Contacts", "Messages", "TourDetails", "AutomatedResponseLog" };
+                var existingTables = await connection.QueryAsync<string>(
+                    "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+                
+                var missingTables = requiredTables.Except(existingTables, StringComparer.OrdinalIgnoreCase).ToList();
+                
+                if (missingTables.Any())
                 {
-                    logger.LogError($"SQL script file not found at: {sqlScriptPath}");
-                    throw new FileNotFoundException($"SQL script file not found: {sqlScriptPath}");
+                    logger.LogError($"Missing required tables: {string.Join(", ", missingTables)}");
+                    throw new InvalidOperationException($"Database is missing required tables: {string.Join(", ", missingTables)}");
                 }
 
-                var sqlScript = await File.ReadAllTextAsync(sqlScriptPath);
-                logger.LogInformation("SQL script loaded successfully.");
-
-                // Split the script into individual statements (simple approach)
-                var statements = sqlScript.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+                // Verify table count and log success
+                var tableCount = existingTables.Count();
+                logger.LogInformation($"Database verification completed successfully. Found {tableCount} tables.");
                 
-                foreach (var statement in statements)
-                {
-                    var trimmedStatement = statement.Trim();
-                    if (!string.IsNullOrEmpty(trimmedStatement) && 
-                        !trimmedStatement.StartsWith("--") && 
-                        !trimmedStatement.StartsWith("PRAGMA table_info") &&
-                        !trimmedStatement.StartsWith("SELECT name FROM sqlite_master") &&
-                        !trimmedStatement.StartsWith("SELECT 'TourDetails Count") &&
-                        !trimmedStatement.StartsWith("SELECT 'SystemSettings Count") &&
-                        !trimmedStatement.StartsWith("SELECT TourType") &&
-                        !trimmedStatement.StartsWith("SELECT 'WhatsApp Business Database"))
-                    {
-                        try
-                        {
-                            await connection.ExecuteAsync(trimmedStatement);
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.LogWarning($"Failed to execute SQL statement: {trimmedStatement.Substring(0, Math.Min(50, trimmedStatement.Length))}... Error: {ex.Message}");
-                        }
-                    }
-                }
-
-                logger.LogInformation("Database initialization completed successfully.");
+                // Optional: Log some basic stats
+                var contactCount = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM Contacts");
+                var messageCount = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM Messages");
+                var tourCount = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM TourDetails");
                 
-                // Verify tables were created
-                var tableCount = await connection.ExecuteScalarAsync<int>(
-                    "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
-                logger.LogInformation($"Database initialized with {tableCount} tables.");
+                logger.LogInformation($"Database stats - Contacts: {contactCount}, Messages: {messageCount}, Tours: {tourCount}");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Error during database initialization.");
+                logger.LogError(ex, "Error during database verification.");
                 throw;
             }
         }
