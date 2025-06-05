@@ -197,5 +197,47 @@ namespace WhatsAppBusinessAPI.Repositories
             return await connection.QueryFirstOrDefaultAsync<AutomatedResponseLog>(
                 "SELECT * FROM AutomatedResponseLog WHERE Id = @Id", new { id });
         }
+
+        public async Task<IEnumerable<TourDetails>> GetAllActiveTourDetailsAsync()
+        {
+            using var connection = await GetOpenConnectionAsync();
+            return await connection.QueryAsync<TourDetails>(
+                "SELECT * FROM TourDetails WHERE IsActive = 1 ORDER BY TourType, Date, TimeSlot");
+        }
+
+        public async Task<Dictionary<string, object>> GetSystemStatsAsync()
+        {
+            using var connection = await GetOpenConnectionAsync();
+            
+            var stats = new Dictionary<string, object>();
+            
+            // Get total contacts
+            var totalContacts = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM Contacts");
+            stats["TotalContacts"] = totalContacts;
+            
+            // Get total messages
+            var totalMessages = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM Messages");
+            stats["TotalMessages"] = totalMessages;
+            
+            // Get automated responses today
+            var responsesToday = await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM AutomatedResponseLog WHERE DATE(RequestReceivedTime) = DATE('now')");
+            stats["AutomatedResponsesToday"] = responsesToday;
+            
+            // Get success rate
+            var totalResponses = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM AutomatedResponseLog");
+            var successfulResponses = await connection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM AutomatedResponseLog WHERE Status = 'Sent'");
+            stats["TotalAutomatedResponses"] = totalResponses;
+            stats["SuccessfulResponses"] = successfulResponses;
+            stats["SuccessRate"] = totalResponses > 0 ? (double)successfulResponses / totalResponses * 100 : 0;
+            
+            // Get average processing time
+            var avgProcessingTime = await connection.ExecuteScalarAsync<double?>(
+                "SELECT AVG(ProcessingDurationMs) FROM AutomatedResponseLog WHERE ProcessingDurationMs > 0");
+            stats["AverageProcessingTimeMs"] = avgProcessingTime ?? 0;
+            
+            return stats;
+        }
     }
 } 
