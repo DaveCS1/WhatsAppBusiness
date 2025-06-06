@@ -61,10 +61,48 @@
         <div class="col-md-4 mb-4">
             <div class="card h-100">
                 <div class="card-body text-center">
+                    <i class="bi bi-file-earmark-text-fill text-info" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Message Templates</h5>
+                    <p class="card-text">Create and manage automated response templates with dynamic content.</p>
+                    <NavLink href="/templates" class="btn btn-info">Manage Templates</NavLink>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="bi bi-download text-warning" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3">Data Exports</h5>
+                    <p class="card-text">Export tours, contacts, messages, and analytics data in multiple formats.</p>
+                    <NavLink href="/exports" class="btn btn-warning">Export Data</NavLink>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
                     <i class="bi bi-gear-fill text-secondary" style="font-size: 3rem;"></i>
                     <h5 class="card-title mt-3">API Testing</h5>
                     <p class="card-text">Test API connectivity and simulate WhatsApp messages.</p>
                     <NavLink href="/test" class="btn btn-secondary">API Test</NavLink>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 border-primary">
+                <div class="card-body text-center">
+                    <i class="bi bi-robot text-primary" style="font-size: 3rem;"></i>
+                    <h5 class="card-title mt-3 text-primary">AI Automation</h5>
+                    <p class="card-text">Intelligent WhatsApp message processing with automated tour booking responses.</p>
+                    <div class="d-grid gap-2">
+                        <span class="badge bg-success">Active & Processing</span>
+                        <small class="text-muted">24/7 Automated Service</small>
+                    </div>
                 </div>
             </div>
         </div>
@@ -105,6 +143,81 @@
                     <div class="card-body">
                         <h4 class="text-warning">@(CalculateSuccessRate(stats).ToString("F1"))%</h4>
                         <p class="card-text">Success Rate</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <h3 class="mb-3">Recent Automated Responses</h3>
+            </div>
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="bi bi-clock-history me-2"></i>System Activity Overview
+                        </h5>
+                        <NavLink href="/analytics" class="btn btn-sm btn-outline-primary">View All</NavLink>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-4 mb-3">
+                                <div class="border-end">
+                                    <h4 class="text-success mb-1">@stats.ResponsesLast24Hours</h4>
+                                    <small class="text-muted">Responses Today</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="border-end">
+                                    <h4 class="text-info mb-1">@stats.TotalAutomatedResponses</h4>
+                                    <small class="text-muted">Total Processed</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <h4 class="text-warning mb-1">@(CalculateSuccessRate(stats).ToString("F1"))%</h4>
+                                <small class="text-muted">Success Rate</small>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="badge bg-success">AI Processing Active</span>
+                            <span class="badge bg-info">Templates Ready</span>
+                            <span class="badge bg-warning">Exports Available</span>
+                            <small class="text-muted">Last updated: @DateTime.Now.ToString("HH:mm")</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="bi bi-lightning-fill me-2"></i>Quick Actions
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <NavLink href="/templates" class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-file-earmark-text me-1"></i> Manage Templates
+                            </NavLink>
+                            <NavLink href="/exports" class="btn btn-outline-warning btn-sm">
+                                <i class="bi bi-download me-1"></i> Export Data
+                            </NavLink>
+                            <NavLink href="/chat" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-chat-dots me-1"></i> View Conversations
+                            </NavLink>
+                            <NavLink href="/analytics" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-bar-chart-line me-1"></i> View Analytics
+                            </NavLink>
+                        </div>
+                        <hr>
+                        <div class="text-center">
+                            <small class="text-muted">
+                                <i class="bi bi-shield-check text-success me-1"></i>
+                                System Status: Operational
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>

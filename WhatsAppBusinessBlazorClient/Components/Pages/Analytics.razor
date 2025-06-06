@@ -3,6 +3,7 @@
 @using WhatsAppBusinessBlazorClient.Models
 @using WhatsAppBusinessBlazorClient.Services
 @inject ApiService ApiService
+@inject IJSRuntime JSRuntime
 
 <PageTitle>WhatsApp Business Admin - Analytics</PageTitle>
 
@@ -52,38 +53,162 @@
     {
     <div class="row mb-4">
         <div class="col-md-2">
-            <div class="card text-center">
+            <div class="card text-center border-primary">
                 <div class="card-body">
+                    <i class="bi bi-people-fill text-primary mb-2" style="font-size: 1.5rem;"></i>
                     <h5 class="card-title text-primary">@totalContacts</h5>
                     <p class="card-text">Total Contacts</p>
                 </div>
             </div>
         </div>
         <div class="col-md-2">
-            <div class="card text-center">
+            <div class="card text-center border-info">
                 <div class="card-body">
+                    <i class="bi bi-chat-dots-fill text-info mb-2" style="font-size: 1.5rem;"></i>
                     <h5 class="card-title text-info">@totalMessages</h5>
                     <p class="card-text">Total Messages</p>
                 </div>
             </div>
         </div>
         <div class="col-md-2">
-            <div class="card text-center">
+            <div class="card text-center border-success">
                 <div class="card-body">
+                    <i class="bi bi-robot text-success mb-2" style="font-size: 1.5rem;"></i>
                     <h5 class="card-title text-success">@automatedResponsesToday</h5>
                     <p class="card-text">Automated Today</p>
                 </div>
             </div>
         </div>
         <div class="col-md-2">
-            <div class="card text-center">
+            <div class="card text-center border-warning">
                 <div class="card-body">
+                    <i class="bi bi-speedometer2 text-warning mb-2" style="font-size: 1.5rem;"></i>
                     <h5 class="card-title text-warning">@successRate.ToString("F1")%</h5>
                     <p class="card-text">Success Rate</p>
                 </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center border-secondary">
+                <div class="card-body">
+                    <i class="bi bi-clock-fill text-secondary mb-2" style="font-size: 1.5rem;"></i>
+                    <h5 class="card-title text-secondary">@averageProcessingTime.ToString("F0")ms</h5>
+                    <p class="card-text">Avg Response</p>
                 </div>
             </div>
         </div>
+        <div class="col-md-2">
+            <div class="card text-center border-dark">
+                <div class="card-body">
+                    <i class="bi bi-lightning-fill text-dark mb-2" style="font-size: 1.5rem;"></i>
+                    <h5 class="card-title text-dark">@peakHour</h5>
+                    <p class="card-text">Peak Hour</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Insights Row -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-graph-up me-2"></i>Performance Insights</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Response Efficiency:</span>
+                            <span class="badge bg-@(GetEfficiencyBadgeColor())">@GetEfficiencyRating()</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 6px;">
+                            <div class="progress-bar bg-@(GetEfficiencyBadgeColor())" style="width: @(successRate)%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Speed Rating:</span>
+                            <span class="badge bg-@(GetSpeedBadgeColor())">@GetSpeedRating()</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 6px;">
+                            <div class="progress-bar bg-@(GetSpeedBadgeColor())" style="width: @(GetSpeedPercentage())%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>Activity Level:</span>
+                            <span class="badge bg-@(GetActivityBadgeColor())">@GetActivityLevel()</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 6px;">
+                            <div class="progress-bar bg-@(GetActivityBadgeColor())" style="width: @(GetActivityPercentage())%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="bi bi-clock-history me-2"></i>Time Analysis</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6 mb-3">
+                            <h5 class="text-success">@fastestResponse ms</h5>
+                            <small class="text-muted">Fastest Response</small>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <h5 class="text-warning">@slowestResponse ms</h5>
+                            <small class="text-muted">Slowest Response</small>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <h5 class="text-info">@responsesThisHour</h5>
+                            <small class="text-muted">Responses This Hour</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="text-center">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            System uptime: @GetSystemUptime()
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="bi bi-pie-chart me-2"></i>Response Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Successful</span>
+                            <span class="badge bg-success">@successfulCount</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 8px;">
+                            <div class="progress-bar bg-success" style="width: @(successRate)%"></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span>Failed</span>
+                            <span class="badge bg-danger">@failedCount</span>
+                        </div>
+                        <div class="progress mt-1" style="height: 8px;">
+                            <div class="progress-bar bg-danger" style="width: @(100 - successRate)%"></div>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="text-center">
+                        <h6 class="text-primary">@GetReliabilityScore()</h6>
+                        <small class="text-muted">Reliability Score</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     }
 
     <!-- Recent Logs Table - Only show when data is loaded -->
@@ -112,7 +237,7 @@
                                 <tbody>
                                         @foreach (var log in logs.Take(10))
                                     {
-                                        <tr>
+                                        <tr class="cursor-pointer" @onclick="() => ShowLogDetails(log)">
                                             <td>
                                                 <small>@log.RequestReceivedTime.ToString("MM/dd HH:mm")</small>
                                             </td>
@@ -156,16 +281,432 @@
                     }
                     </div>
 
+<!-- Log Details Modal -->
+<div class="modal fade" id="logDetailsModal" tabindex="-1" aria-labelledby="logDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logDetailsModalLabel">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Automated Response Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                @if (selectedLog != null)
+                {
+                    <div class="row">
+                        <!-- Left Column: Basic Info & Processing -->
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="bi bi-person-circle me-2"></i>Contact & Processing Info</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Contact ID:</strong></div>
+                                        <div class="col-sm-8">@selectedLog.ContactWaId</div>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Request Time:</strong></div>
+                                        <div class="col-sm-8">@selectedLog.RequestReceivedTime.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Response Time:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.ResponseSentTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A")</div>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Processing Duration:</strong></div>
+                                        <div class="col-sm-8">
+                                            <span class="badge bg-@(GetProcessingTimeBadge(selectedLog.ProcessingDurationMs))">
+                                                @selectedLog.ProcessingDurationMs ms
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>AI API Call:</strong></div>
+                                        <div class="col-sm-8">
+                                            <span class="badge bg-info">
+                                                @(selectedLog.AiApiCallDurationMs?.ToString() ?? "N/A") ms
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Status:</strong></div>
+                                        <div class="col-sm-8">
+                                            <span class="badge bg-@(selectedLog.Status == "Sent" ? "success" : "danger")">
+                                                @selectedLog.Status
+                                            </span>
+                                        </div>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(selectedLog.ErrorMessage))
+                                    {
+                                        <div class="row mt-2">
+                                            <div class="col-sm-4"><strong>Error:</strong></div>
+                                            <div class="col-sm-8">
+                                                <span class="text-danger">@selectedLog.ErrorMessage</span>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- AI Extracted Data -->
+                            @if (!string.IsNullOrEmpty(selectedLog.AiExtractedData))
+                            {
+                                <div class="card mb-3">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0"><i class="bi bi-robot me-2"></i>AI Extracted Data</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <pre class="bg-light p-3 rounded" style="font-size: 0.9rem; max-height: 200px; overflow-y: auto;">@FormatJsonData(selectedLog.AiExtractedData)</pre>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Right Column: Tour Details & Response -->
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="bi bi-map me-2"></i>Tour Details Used</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Template:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.TemplateUsed ?? "N/A")</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Company:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.CompanyNameUsed ?? "N/A")</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Guide:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.GuideNameUsed ?? "N/A")</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Location:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.TourLocationUsed ?? "N/A")</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Time:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.TourTimeUsed ?? "N/A")</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Identifier:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.IdentifiableObjectUsed ?? "N/A")</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Guide Phone:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.GuideNumberUsed ?? "N/A")</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Performance Metrics -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Performance Metrics</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <h6 class="text-primary">@selectedLog.ProcessingDurationMs ms</h6>
+                                            <small class="text-muted">Total Time</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <h6 class="text-info">@(selectedLog.AiApiCallDurationMs?.ToString() ?? "N/A") ms</h6>
+                                            <small class="text-muted">AI Call</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <h6 class="text-success">@GetEfficiencyRating(selectedLog)</h6>
+                                            <small class="text-muted">Rating</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Full Response Text -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header bg-secondary text-white">
+                                    <h6 class="mb-0"><i class="bi bi-chat-text me-2"></i>Full Automated Response</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: auto;">
+                                        <div style="white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">@selectedLog.FullResponseText</div>
+                                    </div>
+                                    <div class="mt-3 d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            Response length: @selectedLog.FullResponseText.Length characters
+                                        </small>
+                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => CopyToClipboard(selectedLog.FullResponseText)">
+                                            <i class="bi bi-clipboard me-1"></i>Copy Response
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                @if (selectedLog != null)
+                {
+                    <button type="button" class="btn btn-primary" @onclick="() => ExportLogDetails(selectedLog)">
+                        <i class="bi bi-download me-1"></i>Export Details
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .cursor-pointer {
+        cursor: pointer;
+    }
+    
+    .cursor-pointer:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+</style>
+
+<!-- Log Details Modal -->
+<div class="modal fade" id="logDetailsModal" tabindex="-1" aria-labelledby="logDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="logDetailsModalLabel">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Automated Response Details
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                @if (selectedLog != null)
+                {
+                    <div class="row">
+                        <!-- Left Column: Basic Info & Processing -->
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header bg-primary text-white">
+                                    <h6 class="mb-0"><i class="bi bi-person-circle me-2"></i>Contact & Processing Info</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Contact ID:</strong></div>
+                                        <div class="col-sm-8">@selectedLog.ContactWaId</div>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Request Time:</strong></div>
+                                        <div class="col-sm-8">@selectedLog.RequestReceivedTime.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Response Time:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.ResponseSentTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A")</div>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Processing Duration:</strong></div>
+                                        <div class="col-sm-8">
+                                            <span class="badge bg-@(GetProcessingTimeBadge(selectedLog.ProcessingDurationMs))">
+                                                @selectedLog.ProcessingDurationMs ms
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>AI API Call:</strong></div>
+                                        <div class="col-sm-8">
+                                            <span class="badge bg-info">
+                                                @(selectedLog.AiApiCallDurationMs?.ToString() ?? "N/A") ms
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-sm-4"><strong>Status:</strong></div>
+                                        <div class="col-sm-8">
+                                            <span class="badge bg-@(selectedLog.Status == "Sent" ? "success" : "danger")">
+                                                @selectedLog.Status
+                                            </span>
+                                        </div>
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(selectedLog.ErrorMessage))
+                                    {
+                                        <div class="row mt-2">
+                                            <div class="col-sm-4"><strong>Error:</strong></div>
+                                            <div class="col-sm-8">
+                                                <span class="text-danger">@selectedLog.ErrorMessage</span>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- AI Extracted Data -->
+                            @if (!string.IsNullOrEmpty(selectedLog.AiExtractedData))
+                            {
+                                <div class="card mb-3">
+                                    <div class="card-header bg-info text-white">
+                                        <h6 class="mb-0"><i class="bi bi-robot me-2"></i>AI Extracted Data</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <pre class="bg-light p-3 rounded" style="font-size: 0.9rem; max-height: 200px; overflow-y: auto;">@FormatJsonData(selectedLog.AiExtractedData)</pre>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Right Column: Tour Details & Response -->
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="bi bi-map me-2"></i>Tour Details Used</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Template:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.TemplateUsed ?? "N/A")</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Company:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.CompanyNameUsed ?? "N/A")</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Guide:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.GuideNameUsed ?? "N/A")</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Location:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.TourLocationUsed ?? "N/A")</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Time:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.TourTimeUsed ?? "N/A")</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Identifier:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.IdentifiableObjectUsed ?? "N/A")</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-sm-4"><strong>Guide Phone:</strong></div>
+                                        <div class="col-sm-8">@(selectedLog.GuideNumberUsed ?? "N/A")</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Performance Metrics -->
+                            <div class="card mb-3">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Performance Metrics</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <h6 class="text-primary">@selectedLog.ProcessingDurationMs ms</h6>
+                                            <small class="text-muted">Total Time</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <h6 class="text-info">@(selectedLog.AiApiCallDurationMs?.ToString() ?? "N/A") ms</h6>
+                                            <small class="text-muted">AI Call</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <h6 class="text-success">@GetEfficiencyRating(selectedLog)</h6>
+                                            <small class="text-muted">Rating</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Full Response Text -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header bg-secondary text-white">
+                                    <h6 class="mb-0"><i class="bi bi-chat-text me-2"></i>Full Automated Response</h6>
+                                </div>
+                                <div class="card-body">
+                                    <div class="bg-light p-3 rounded" style="max-height: 300px; overflow-y: auto;">
+                                        <div style="white-space: pre-wrap; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">@selectedLog.FullResponseText</div>
+                                    </div>
+                                    <div class="mt-3 d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            Response length: @selectedLog.FullResponseText.Length characters
+                                        </small>
+                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => CopyToClipboard(selectedLog.FullResponseText)">
+                                            <i class="bi bi-clipboard me-1"></i>Copy Response
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                @if (selectedLog != null)
+                {
+                    <button type="button" class="btn btn-primary" @onclick="() => ExportLogDetails(selectedLog)">
+                        <i class="bi bi-download me-1"></i>Export Details
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .cursor-pointer {
+        cursor: pointer;
+    }
+    
+    .cursor-pointer:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+    
+    pre {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+</style>
+
 @code {
     private List<AutomatedResponseLog>? logs;
     private int totalContacts = 0;
     private int totalMessages = 0;
     private int automatedResponsesToday = 0;
     private double successRate = 0;
+    private double averageProcessingTime = 0;
+    private string peakHour = "N/A";
+    private int fastestResponse = 0;
+    private int slowestResponse = 0;
+    private int responsesThisHour = 0;
+    private int successfulCount = 0;
+    private int failedCount = 0;
     private bool isLoading = false;
     private bool dataLoaded = false;
     private string errorMessage = "";
     private DateTime lastUpdated = DateTime.Now;
+    private DateTime systemStartTime = DateTime.Now;
 
     // No automatic loading in OnInitializedAsync - everything is lazy loaded
     protected override async Task OnInitializedAsync()
@@ -257,6 +798,9 @@
             {
                 logs = new List<AutomatedResponseLog>();
             }
+
+            // Calculate additional metrics from the logs
+            CalculateAdvancedMetrics();
         }
         catch (Exception ex)
         {
@@ -264,8 +808,237 @@
         }
     }
 
+    private void CalculateAdvancedMetrics()
+    {
+        if (logs == null || !logs.Any())
+        {
+            averageProcessingTime = 0;
+            peakHour = "N/A";
+            fastestResponse = 0;
+            slowestResponse = 0;
+            responsesThisHour = 0;
+            successfulCount = 0;
+            failedCount = 0;
+            return;
+        }
+
+        // Calculate processing time metrics
+        var processingTimes = logs.Where(l => l.ProcessingDurationMs > 0).Select(l => l.ProcessingDurationMs).ToList();
+        if (processingTimes.Any())
+        {
+            averageProcessingTime = processingTimes.Average();
+            fastestResponse = processingTimes.Min();
+            slowestResponse = processingTimes.Max();
+        }
+
+        // Calculate peak hour
+        var hourGroups = logs.GroupBy(l => l.RequestReceivedTime.Hour)
+                             .OrderByDescending(g => g.Count())
+                             .FirstOrDefault();
+        if (hourGroups != null)
+        {
+            peakHour = $"{hourGroups.Key:00}:00";
+        }
+
+        // Calculate responses this hour
+        var currentHour = DateTime.Now.Hour;
+        responsesThisHour = logs.Count(l => l.RequestReceivedTime.Hour == currentHour && 
+                                           l.RequestReceivedTime.Date == DateTime.Today);
+
+        // Calculate success/failure counts
+        successfulCount = logs.Count(l => l.Status == "Sent");
+        failedCount = logs.Count(l => l.Status != "Sent");
+    }
+
+    // Performance rating methods
+    private string GetEfficiencyRating()
+    {
+        if (successRate >= 95) return "Excellent";
+        if (successRate >= 85) return "Good";
+        if (successRate >= 70) return "Fair";
+        return "Needs Improvement";
+    }
+
+    private string GetEfficiencyBadgeColor()
+    {
+        if (successRate >= 95) return "success";
+        if (successRate >= 85) return "primary";
+        if (successRate >= 70) return "warning";
+        return "danger";
+    }
+
+    private string GetSpeedRating()
+    {
+        if (averageProcessingTime <= 1000) return "Lightning Fast";
+        if (averageProcessingTime <= 2000) return "Fast";
+        if (averageProcessingTime <= 5000) return "Good";
+        return "Slow";
+    }
+
+    private string GetSpeedBadgeColor()
+    {
+        if (averageProcessingTime <= 1000) return "success";
+        if (averageProcessingTime <= 2000) return "primary";
+        if (averageProcessingTime <= 5000) return "warning";
+        return "danger";
+    }
+
+    private double GetSpeedPercentage()
+    {
+        // Convert processing time to percentage (lower is better)
+        if (averageProcessingTime <= 1000) return 100;
+        if (averageProcessingTime <= 2000) return 80;
+        if (averageProcessingTime <= 5000) return 60;
+        return 30;
+    }
+
+    private string GetActivityLevel()
+    {
+        if (automatedResponsesToday >= 50) return "Very High";
+        if (automatedResponsesToday >= 20) return "High";
+        if (automatedResponsesToday >= 10) return "Moderate";
+        if (automatedResponsesToday >= 1) return "Low";
+        return "Inactive";
+    }
+
+    private string GetActivityBadgeColor()
+    {
+        if (automatedResponsesToday >= 50) return "success";
+        if (automatedResponsesToday >= 20) return "primary";
+        if (automatedResponsesToday >= 10) return "info";
+        if (automatedResponsesToday >= 1) return "warning";
+        return "secondary";
+    }
+
+    private double GetActivityPercentage()
+    {
+        // Scale activity level to percentage
+        var maxExpected = 100; // Expected max responses per day
+        return Math.Min(100, (automatedResponsesToday / (double)maxExpected) * 100);
+    }
+
+    private string GetReliabilityScore()
+    {
+        var score = (successRate + GetSpeedPercentage()) / 2;
+        return $"{score:F1}/100";
+    }
+
+    private string GetSystemUptime()
+    {
+        var uptime = DateTime.Now - systemStartTime;
+        if (uptime.TotalDays >= 1)
+            return $"{uptime.Days}d {uptime.Hours}h";
+        if (uptime.TotalHours >= 1)
+            return $"{uptime.Hours}h {uptime.Minutes}m";
+        return $"{uptime.Minutes}m";
+    }
+
     private void ClearError()
     {
         errorMessage = "";
+    }
+
+    private AutomatedResponseLog? selectedLog;
+
+    private async Task ShowLogDetails(AutomatedResponseLog log)
+    {
+        selectedLog = log;
+        await InvokeAsync(StateHasChanged);
+        
+        // Show the modal using JavaScript interop
+        await Task.Delay(50); // Small delay to ensure DOM is updated
+        await ShowModal();
+    }
+
+    private async Task ShowModal()
+    {
+        try
+        {
+            // Show the Bootstrap modal using JavaScript interop
+            await JSRuntime.InvokeVoidAsync("eval", "new bootstrap.Modal(document.getElementById('logDetailsModal')).show()");
+        }
+        catch (Exception ex)
+        {
+            // Handle any errors
+            Console.WriteLine($"Error showing modal: {ex.Message}");
+        }
+    }
+
+    private string GetProcessingTimeBadge(int processingTime)
+    {
+        if (processingTime <= 1000) return "success";
+        if (processingTime <= 2000) return "primary";
+        if (processingTime <= 5000) return "warning";
+        return "danger";
+    }
+
+    private string GetEfficiencyRating(AutomatedResponseLog log)
+    {
+        if (log.Status != "Sent") return "Failed";
+        if (log.ProcessingDurationMs <= 1000) return "Excellent";
+        if (log.ProcessingDurationMs <= 2000) return "Good";
+        if (log.ProcessingDurationMs <= 5000) return "Fair";
+        return "Slow";
+    }
+
+    private string FormatJsonData(string? jsonData)
+    {
+        if (string.IsNullOrEmpty(jsonData)) return "No data available";
+        
+        try
+        {
+            // Simple JSON formatting - in a real app you might use a JSON formatter
+            var formatted = jsonData.Replace(",", ",\n").Replace("{", "{\n  ").Replace("}", "\n}");
+            return formatted;
+        }
+        catch
+        {
+            return jsonData; // Return original if formatting fails
+        }
+    }
+
+    private async Task CopyToClipboard(string text)
+    {
+        try
+        {
+            // Copy to clipboard using JavaScript interop
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            Console.WriteLine($"Copied to clipboard: {text.Substring(0, Math.Min(50, text.Length))}...");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error copying to clipboard: {ex.Message}");
+        }
+    }
+
+    private async Task ExportLogDetails(AutomatedResponseLog log)
+    {
+        try
+        {
+            // In a real implementation, you'd create a detailed export of the log
+            var exportData = new
+            {
+                LogId = log.Id,
+                ContactWaId = log.ContactWaId,
+                RequestTime = log.RequestReceivedTime,
+                ResponseTime = log.ResponseSentTime,
+                ProcessingDuration = log.ProcessingDurationMs,
+                AiCallDuration = log.AiApiCallDurationMs,
+                Status = log.Status,
+                Template = log.TemplateUsed,
+                Guide = log.GuideNameUsed,
+                Location = log.TourLocationUsed,
+                FullResponse = log.FullResponseText,
+                AiData = log.AiExtractedData,
+                ErrorMessage = log.ErrorMessage
+            };
+            
+            Console.WriteLine($"Exporting log details for ID: {log.Id}");
+            // Here you would typically download the data as JSON or CSV
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error exporting log details: {ex.Message}");
+        }
     }
 } 

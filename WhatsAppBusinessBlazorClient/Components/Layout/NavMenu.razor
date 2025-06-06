@@ -8,44 +8,44 @@
 
 <div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
     <nav class="flex-column">
-        <div class="nav-item px-3">
+        <div class="nav-item">
             <NavLink class="nav-link d-flex align-items-center" href="" Match="NavLinkMatch.All">
-                <i class="bi bi-house-door-fill nav-icon me-3"></i>
+                <i class="bi bi-house-door-fill nav-icon"></i>
                 <span>Dashboard</span>
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
+        <div class="nav-item">
             <NavLink class="nav-link d-flex align-items-center" href="chat">
-                <i class="bi bi-chat-dots-fill nav-icon me-3"></i>
+                <i class="bi bi-chat-dots-fill nav-icon"></i>
                 <span>Chat</span>
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
+        <div class="nav-item">
             <NavLink class="nav-link d-flex align-items-center" href="analytics">
-                <i class="bi bi-bar-chart-line-fill nav-icon me-3"></i>
+                <i class="bi bi-bar-chart-line-fill nav-icon"></i>
                 <span>Analytics</span>
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
+        <div class="nav-item">
             <NavLink class="nav-link d-flex align-items-center" href="templates">
-                <i class="bi bi-file-text-fill nav-icon me-3"></i>
+                <i class="bi bi-file-text-fill nav-icon"></i>
                 <span>Templates</span>
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
+        <div class="nav-item">
             <NavLink class="nav-link d-flex align-items-center" href="exports">
-                <i class="bi bi-download nav-icon me-3"></i>
+                <i class="bi bi-download nav-icon"></i>
                 <span>Exports</span>
             </NavLink>
         </div>
 
-        <div class="nav-item px-3">
+        <div class="nav-item">
             <NavLink class="nav-link d-flex align-items-center" href="test">
-                <i class="bi bi-gear-fill nav-icon me-3"></i>
+                <i class="bi bi-gear-fill nav-icon"></i>
                 <span>API Test</span>
             </NavLink>
         </div>
@@ -54,26 +54,88 @@
 
 <style>
     .nav-icon {
-        font-size: 1.1rem;
-        width: 20px;
+        font-size: 1.25rem;
+        width: 28px;
+        height: 28px;
         text-align: center;
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        line-height: 1;
+        vertical-align: middle;
     }
     
     .nav-link {
-        padding: 0.75rem 1rem;
-        border-radius: 0.375rem;
-        margin-bottom: 0.25rem;
-        transition: all 0.2s ease;
+        padding: 1rem 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+        min-height: 52px;
+        display: flex;
+        align-items: center;
+        text-decoration: none;
+        line-height: 1.2;
     }
     
     .nav-link:hover {
-        background-color: rgba(255, 255, 255, 0.1);
+        background-color: rgba(255, 255, 255, 0.15);
+        transform: translateX(4px);
+        text-decoration: none;
     }
     
     .nav-link.active {
-        background-color: rgba(255, 255, 255, 0.2);
+        background-color: rgba(255, 255, 255, 0.25);
         font-weight: 600;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .nav-link span {
+        font-size: 0.95rem;
+        font-weight: 500;
+        line-height: 1.2;
+        vertical-align: middle;
+        margin-left: 0.75rem;
+    }
+    
+    .nav-item {
+        margin-bottom: 0.25rem;
+        padding: 0 0.75rem;
+    }
+    
+    /* Ensure consistent spacing and alignment */
+    .nav-scrollable {
+        padding-top: 1rem;
+        padding-bottom: 2rem;
+    }
+    
+    /* Mobile responsiveness */
+    @@media (max-width: 768px) {
+        .nav-link {
+            padding: 0.875rem 1rem;
+            min-height: 48px;
+        }
+        
+        .nav-icon {
+            width: 26px;
+            height: 26px;
+            font-size: 1.2rem;
+        }
+        
+        .nav-link span {
+            font-size: 0.9rem;
+            margin-left: 0.5rem;
+        }
+        
+        .nav-item {
+            padding: 0 0.5rem;
+        }
+    }
+    
+    /* Ensure icons are perfectly centered */
+    .nav-link .nav-icon {
+        position: relative;
+        top: 0;
     }
 </style>
 

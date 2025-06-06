@@ -8,7 +8,7 @@ namespace WhatsAppBusinessBlazorClient.Models
         public DateTime RequestReceivedTime { get; set; }
         public DateTime? ResponseSentTime { get; set; }
         public int ProcessingDurationMs { get; set; }
-        public int AiApiCallDurationMs { get; set; }
+        public int? AiApiCallDurationMs { get; set; }
         public string TemplateUsed { get; set; } = string.Empty;
         public string CompanyNameUsed { get; set; } = string.Empty;
         public string GuideNameUsed { get; set; } = string.Empty;
