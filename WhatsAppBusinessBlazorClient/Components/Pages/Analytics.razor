@@ -15,6 +15,9 @@
                     <button class="btn btn-warning me-2" @onclick="TestButtonClick">
                         🧪 Test Button
                     </button>
+                    <button class="btn btn-success me-2" @onclick="SimpleTest">
+                        ✅ Simple
+                    </button>
                     <button class="btn btn-outline-primary" @onclick="RefreshLogs">
                         <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
@@ -39,7 +42,11 @@
                                 <i class="bi bi-file-earmark-spreadsheet"></i>
                                 Export All Messages
                             </button>
-                            <small class="text-muted">Debug: @(showBulkExportDialog ? "Dialog Open" : "Dialog Closed")</small>
+                            <small class="text-muted">
+                                Debug: @(showBulkExportDialog ? "Dialog Open" : "Dialog Closed") | 
+                                Type: @bulkExportType |
+                                Logs: @(logs?.Count ?? 0)
+                            </small>
                         </div>
                         <div class="col-md-3">
                             <button class="btn btn-info w-100 mb-2" @onclick="ShowBulkExportSentMessages">
@@ -745,13 +752,87 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadAnalyticsData();
+        try
+        {
+            // Load simple data first
+            LoadSimpleStatistics();
+            LoadSimpleLogs();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading data: {ex.Message}";
+            showErrorMessage = true;
+        }
     }
 
     private async Task LoadAnalyticsData()
     {
         await LoadStatistics();
         await LoadLogs();
+    }
+
+    private void LoadSimpleStatistics()
+    {
+        totalContacts = 5;
+        totalMessages = 12;
+        automatedResponsesToday = 3;
+        successRate = 100.0;
+        averageProcessingTime = 1240;
+        averageAiTime = 825;
+
+        tourTypeStats = new Dictionary<string, int>
+        {
+            ["Food Tour"] = 2,
+            ["Walking Tour"] = 1,
+            ["Historical Tour"] = 1
+        };
+    }
+
+    private void LoadSimpleLogs()
+    {
+        logs = new List<AutomatedResponseLog>
+        {
+            new AutomatedResponseLog
+            {
+                Id = 1,
+                IncomingMessageId = 1,
+                ContactWaId = "1234567890",
+                RequestReceivedTime = DateTime.Now.AddMinutes(-10),
+                ResponseSentTime = DateTime.Now.AddMinutes(-9),
+                ProcessingDurationMs = 1250,
+                AiApiCallDurationMs = 800,
+                TemplateUsed = "Food Tour",
+                CompanyNameUsed = "NYC Tours",
+                GuideNameUsed = "Maria",
+                TourLocationUsed = "Little Italy",
+                TourTimeUsed = "2 PM",
+                IdentifiableObjectUsed = "company sign",
+                GuideNumberUsed = "(555) 123-4567",
+                FullResponseText = "Hello! Your tour guide Maria will meet you at Little Italy at 2 PM.",
+                Status = "Sent",
+                AiExtractedData = @"{""userName"":""John"",""tourType"":""Food Tour""}"
+            },
+            new AutomatedResponseLog
+            {
+                Id = 2,
+                IncomingMessageId = 4,
+                ContactWaId = "0987654321",
+                RequestReceivedTime = DateTime.Now.AddMinutes(-20),
+                ResponseSentTime = DateTime.Now.AddMinutes(-18),
+                ProcessingDurationMs = 1100,
+                AiApiCallDurationMs = 750,
+                TemplateUsed = "Walking Tour",
+                CompanyNameUsed = "NYC Tours",
+                GuideNameUsed = "Tom",
+                TourLocationUsed = "Central Park",
+                TourTimeUsed = "9 AM",
+                IdentifiableObjectUsed = "company sign",
+                GuideNumberUsed = "(555) 234-5678",
+                FullResponseText = "Hello! Your tour guide Tom will meet you at Central Park at 9 AM.",
+                Status = "Sent",
+                AiExtractedData = @"{""userName"":""Sarah"",""tourType"":""Walking Tour""}"
+            }
+        };
     }
 
     private async Task LoadStatistics()
@@ -853,12 +934,8 @@
 
     private void ShowLogDetails(AutomatedResponseLog log)
     {
-        Console.WriteLine($"ShowLogDetails called for log ID: {log.Id}");
         successMessage = $"View Details clicked for log {log.Id}!";
         showSuccessMessage = true;
-        selectedLog = log;
-        Console.WriteLine($"selectedLog set to: {selectedLog?.Id}");
-        StateHasChanged();
     }
 
     private void CloseLogDetails()
@@ -890,11 +967,8 @@
 
     private void ShowResendDialog(AutomatedResponseLog log)
     {
-        Console.WriteLine($"ShowResendDialog called for log ID: {log.Id}");
-        selectedLogForAction = log;
-        showResendDialog = true;
-        Console.WriteLine($"showResendDialog set to: {showResendDialog}");
-        StateHasChanged();
+        successMessage = $"Resend clicked for log {log.Id}!";
+        showSuccessMessage = true;
     }
 
     private void CloseActionDialogs()
@@ -908,20 +982,20 @@
 
     private void ShowContactDialog(AutomatedResponseLog log)
     {
-        selectedLogForAction = log;
-        showContactDialog = true;
+        successMessage = $"Contact clicked for log {log.Id}!";
+        showSuccessMessage = true;
     }
 
     private void ShowReviewDialog(AutomatedResponseLog log)
     {
-        selectedLogForAction = log;
-        showReviewDialog = true;
+        successMessage = $"Review clicked for log {log.Id}!";
+        showSuccessMessage = true;
     }
 
     private void ShowExportDialog(AutomatedResponseLog log)
     {
-        selectedLogForAction = log;
-        showExportDialog = true;
+        successMessage = $"Export clicked for log {log.Id}!";
+        showSuccessMessage = true;
     }
 
     private async Task ConfirmResendMessage()
@@ -1124,11 +1198,16 @@
 
     private void ShowBulkExportDialog(string type)
     {
-        Console.WriteLine($"ShowBulkExportDialog called with type: {type}");
-        bulkExportType = type;
-        showBulkExportDialog = true;
-        Console.WriteLine($"showBulkExportDialog set to: {showBulkExportDialog}");
-        StateHasChanged();
+        try
+        {
+            bulkExportType = type;
+            showBulkExportDialog = true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+            showErrorMessage = true;
+        }
     }
 
     private void CloseBulkExportDialog()
@@ -1220,42 +1299,38 @@
 
     private void ShowBulkExportAllMessages()
     {
-        Console.WriteLine("ShowBulkExportAllMessages clicked");
-        successMessage = "All Messages Export button clicked!";
+        successMessage = "Export All Messages clicked!";
         showSuccessMessage = true;
-        ShowBulkExportDialog("all");
     }
 
     private void ShowBulkExportSentMessages()
     {
-        Console.WriteLine("ShowBulkExportSentMessages clicked");
-        ShowBulkExportDialog("sent");
+        successMessage = "Export Sent Messages clicked!";
+        showSuccessMessage = true;
     }
 
     private void ShowBulkExportReceivedMessages()
     {
-        Console.WriteLine("ShowBulkExportReceivedMessages clicked");
-        ShowBulkExportDialog("received");
+        successMessage = "Export Received Messages clicked!";
+        showSuccessMessage = true;
     }
 
     private void ShowBulkExportByContact()
     {
-        Console.WriteLine("ShowBulkExportByContact clicked");
-        ShowBulkExportDialog("by-contact");
+        successMessage = "Export By Contact clicked!";
+        showSuccessMessage = true;
     }
 
     private void TestButtonClick()
     {
-        Console.WriteLine("Test button clicked!");
-        successMessage = "🎉 Test button works! Blazor Server is responding.";
+        successMessage = "Test button works! Blazor Server is responding.";
         showSuccessMessage = true;
-        StateHasChanged();
-        
-        // Auto-hide after 3 seconds
-        _ = Task.Delay(3000).ContinueWith(_ => {
-            showSuccessMessage = false;
-            InvokeAsync(StateHasChanged);
-        });
+    }
+
+    private void SimpleTest()
+    {
+        successMessage = "Simple test works!";
+        showSuccessMessage = true;
     }
 
     private async Task DownloadFile(byte[] data, string fileName, string mimeType)
