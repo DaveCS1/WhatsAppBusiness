@@ -361,3 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/.github/workflows/ci-cd.yml
+/WhatsAppBusinessAPI/Data/run_migration.ps1
+/WhatsAppBusinessAPI/appsettings.Production.json
+/WhatsAppBusinessBlazorClient/appsettings.Development.json
+/BUILD.md
+/deploy-azure.ps1
+/build.ps1
