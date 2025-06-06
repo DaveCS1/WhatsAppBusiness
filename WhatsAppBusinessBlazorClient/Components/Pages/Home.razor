@@ -87,23 +87,23 @@
             <div class="col-md-3 mb-3">
                 <div class="card text-center">
                     <div class="card-body">
-                        <h4 class="text-info">@stats.TotalMessages</h4>
-                        <p class="card-text">Total Messages</p>
+                        <h4 class="text-info">@stats.TotalAutomatedResponses</h4>
+                        <p class="card-text">Total Responses</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-3 mb-3">
                 <div class="card text-center">
                     <div class="card-body">
-                        <h4 class="text-success">@stats.AutomatedResponsesToday</h4>
-                        <p class="card-text">Automated Today</p>
+                        <h4 class="text-success">@stats.ResponsesLast24Hours</h4>
+                        <p class="card-text">Responses Today</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-3 mb-3">
                 <div class="card text-center">
                     <div class="card-body">
-                        <h4 class="text-warning">@stats.SuccessRate.ToString("F1")%</h4>
+                        <h4 class="text-warning">@(CalculateSuccessRate(stats).ToString("F1"))%</h4>
                         <p class="card-text">Success Rate</p>
                     </div>
                 </div>
@@ -186,5 +186,11 @@
             isChecking = false;
             await InvokeAsync(StateHasChanged);
         }
+    }
+
+    private double CalculateSuccessRate(SystemStats stats)
+    {
+        if (stats.TotalAutomatedResponses == 0) return 0;
+        return (double)stats.SuccessfulResponses / stats.TotalAutomatedResponses * 100;
     }
 } 

@@ -1,8 +1,8 @@
 @page "/analytics"
+@rendermode InteractiveServer
 @using WhatsAppBusinessBlazorClient.Models
 @using WhatsAppBusinessBlazorClient.Services
 @inject ApiService ApiService
-@inject IJSRuntime JSRuntime
 
 <PageTitle>WhatsApp Business Admin - Analytics</PageTitle>
 
@@ -12,13 +12,14 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h1 class="h3 mb-0">Analytics Dashboard</h1>
                 <div>
-                    <button class="btn btn-warning me-2" @onclick="TestButtonClick">
-                        🧪 Test Button
+                    <button class="btn btn-success me-2" @onclick="LoadDataAsync" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                        }
+                        📊 Load Data
                     </button>
-                    <button class="btn btn-success me-2" @onclick="SimpleTest">
-                        ✅ Simple
-                    </button>
-                    <button class="btn btn-outline-primary" @onclick="RefreshLogs">
+                    <button class="btn btn-outline-primary" @onclick="RefreshData" disabled="@isLoading">
                         <i class="bi bi-arrow-clockwise"></i> Refresh
                     </button>
                 </div>
@@ -26,1337 +27,245 @@
         </div>
     </div>
 
-    <!-- Bulk Export Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="card-title mb-0">
-                        <i class="bi bi-download"></i> Bulk Export Options
-                    </h5>
+    <!-- Error Display -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error:</strong> @errorMessage
+            <button type="button" class="btn-close" @onclick="ClearError"></button>
+        </div>
+    }
+
+    <!-- Loading State -->
+    @if (isLoading)
+    {
+        <div class="text-center my-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading analytics data...</span>
+            </div>
+            <p class="mt-2">Loading analytics data...</p>
+        </div>
+    }
+
+    <!-- Statistics Cards - Only show when data is loaded -->
+    @if (dataLoaded && !isLoading)
+    {
+        <div class="row mb-4">
+            <div class="col-md-2">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-primary">@totalContacts</h5>
+                        <p class="card-text">Total Contacts</p>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3">
-                            <button class="btn btn-success w-100 mb-2" @onclick="ShowBulkExportAllMessages">
-                                <i class="bi bi-file-earmark-spreadsheet"></i>
-                                Export All Messages
-                            </button>
-                            <small class="text-muted">
-                                Debug: @(showBulkExportDialog ? "Dialog Open" : "Dialog Closed") | 
-                                Type: @bulkExportType |
-                                Logs: @(logs?.Count ?? 0)
-                            </small>
-                        </div>
-                        <div class="col-md-3">
-                            <button class="btn btn-info w-100 mb-2" @onclick="ShowBulkExportSentMessages">
-                                <i class="bi bi-arrow-up-circle"></i>
-                                Export Sent Messages
-                            </button>
-                        </div>
-                        <div class="col-md-3">
-                            <button class="btn btn-warning w-100 mb-2" @onclick="ShowBulkExportReceivedMessages">
-                                <i class="bi bi-arrow-down-circle"></i>
-                                Export Received Messages
-                            </button>
-                        </div>
-                        <div class="col-md-3">
-                            <button class="btn btn-secondary w-100 mb-2" @onclick="ShowBulkExportByContact">
-                                <i class="bi bi-person"></i>
-                                Export by Contact
-                            </button>
-                        </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-info">@totalMessages</h5>
+                        <p class="card-text">Total Messages</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-success">@automatedResponsesToday</h5>
+                        <p class="card-text">Automated Today</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title text-warning">@successRate.ToString("F1")%</h5>
+                        <p class="card-text">Success Rate</p>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    }
 
-
-
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-md-2">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h5 class="card-title text-primary">@totalContacts</h5>
-                    <p class="card-text">Total Contacts</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h5 class="card-title text-info">@totalMessages</h5>
-                    <p class="card-text">Total Messages</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h5 class="card-title text-success">@automatedResponsesToday</h5>
-                    <p class="card-text">Automated Today</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h5 class="card-title text-warning">@successRate.ToString("F1")%</h5>
-                    <p class="card-text">Success Rate</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h5 class="card-title text-secondary">@averageProcessingTime ms</h5>
-                    <p class="card-text">Avg Processing</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-2">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h5 class="card-title text-dark">@averageAiTime ms</h5>
-                    <p class="card-text">Avg AI Time</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Performance Metrics -->
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Performance Metrics</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h3 class="text-primary">@averageProcessingTime ms</h3>
-                                <p class="text-muted">Avg Processing Time</p>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="text-center">
-                                <h3 class="text-success">@averageAiTime ms</h3>
-                                <p class="text-muted">Avg AI Response Time</p>
-                            </div>
-                        </div>
+    <!-- Recent Logs Table - Only show when data is loaded -->
+    @if (dataLoaded && !isLoading)
+    {
+        <div class="row">
+            <div class="col">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5>Recent Automated Responses (@(logs?.Count ?? 0) records)</h5>
+                        <small class="text-muted">Last updated: @lastUpdated.ToString("HH:mm:ss")</small>
                     </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Tour Type Distribution</h5>
-                </div>
-                <div class="card-body">
-                    @if (tourTypeStats != null)
-                    {
-                        @foreach (var stat in tourTypeStats)
+                    <div class="card-body">
+                        @if (logs != null && logs.Any())
                         {
-                            <div class="mb-2">
-                                <div class="d-flex justify-content-between">
-                                    <span>@stat.Key</span>
-                                    <span>@stat.Value</span>
-                                </div>
-                                <div class="progress" style="height: 8px;">
-                                    <div class="progress-bar" style="width: @(stat.Value * 100 / tourTypeStats.Values.Max())%"></div>
-                                </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Time</th>
+                                            <th>Contact</th>
+                                            <th>Status</th>
+                                            <th>Processing Time</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var log in logs.Take(10))
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <small>@log.RequestReceivedTime.ToString("MM/dd HH:mm")</small>
+                                                </td>
+                                                <td>
+                                                    <strong>@log.ContactWaId</strong>
+                                                </td>
+                                                <td>
+                                                    <span class="badge @(log.Status == "Sent" ? "bg-success" : "bg-danger")">
+                                                        @log.Status
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <small>@log.ProcessingDurationMs ms</small>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
                             </div>
                         }
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Automated Response Logs -->
-    <div class="row">
-        <div class="col">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5>Recent Automated Responses</h5>
-                    <button class="btn btn-outline-primary btn-sm" @onclick="RefreshLogs">
-                        <i class="bi bi-arrow-clockwise"></i> Refresh
-                    </button>
-                </div>
-                <div class="card-body">
-                    @if (logs != null)
-                    {
-                        <div class="table-responsive">
-                            <table class="table table-hover">
-                                <thead>
-                                    <tr>
-                                        <th>Time</th>
-                                        <th>Contact</th>
-                                        <th>AI Extracted</th>
-                                        <th>Tour Details</th>
-                                        <th>Processing</th>
-                                        <th>Status</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var log in logs.Take(20))
-                                    {
-                                        <tr>
-                                            <td>
-                                                <small>@log.RequestReceivedTime.ToString("MM/dd HH:mm")</small>
-                                            </td>
-                                            <td>
-                                                <strong>@log.ContactWaId</strong>
-                                            </td>
-                                            <td>
-                                                @if (!string.IsNullOrEmpty(log.AiExtractedData))
-                                                {
-                                                    <small class="text-muted">@GetExtractedDataSummary(log.AiExtractedData)</small>
-                                                }
-                                            </td>
-                                            <td>
-                                                <span class="badge bg-secondary">@log.TemplateUsed</span><br>
-                                                <small>@log.GuideNameUsed - @log.TourTimeUsed</small>
-                                            </td>
-                                            <td>
-                                                <small>
-                                                    Total: @log.ProcessingDurationMs ms<br>
-                                                    AI: @log.AiApiCallDurationMs ms
-                                                </small>
-                                            </td>
-                                            <td>
-                                                <span class="badge @(log.Status == "Sent" ? "bg-success" : "bg-danger")">
-                                                    @log.Status
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div class="btn-group" role="group">
-                                                    <button class="btn btn-sm btn-outline-info" @onclick="() => ShowLogDetails(log)" title="View Details">
-                                                        <i class="bi bi-eye"></i>
-                                                    </button>
-                                                    <button class="btn btn-sm btn-outline-success" @onclick="() => ShowResendDialog(log)" title="Resend Message">
-                                                        <i class="bi bi-arrow-repeat"></i>
-                                                    </button>
-                                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => ShowContactDialog(log)" title="Contact Customer">
-                                                        <i class="bi bi-telephone"></i>
-                                                    </button>
-                                                    <button class="btn btn-sm btn-outline-warning" @onclick="() => ShowReviewDialog(log)" title="Mark as Reviewed">
-                                                        <i class="bi bi-check-square"></i>
-                                                    </button>
-                                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => ShowExportDialog(log)" title="Export Data">
-                                                        <i class="bi bi-download"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="text-center">
-                            <div class="spinner-border" role="status">
-                                <span class="visually-hidden">Loading logs...</span>
+                        else
+                        {
+                            <div class="text-center text-muted">
+                                <p>No data available. Click "Load Data" to fetch from API.</p>
                             </div>
-                        </div>
-                    }
+                        }
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+    }
+
+    <!-- Initial State -->
+    @if (!dataLoaded && !isLoading)
+    {
+        <div class="text-center my-5">
+            <i class="bi bi-bar-chart display-1 text-muted"></i>
+            <h3 class="text-muted">Analytics Dashboard</h3>
+            <p class="text-muted">Click "Load Data" to fetch analytics from the API</p>
+        </div>
+    }
 </div>
-
-<!-- Log Details Modal -->
-@if (selectedLog != null)
-{
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Response Details</h5>
-                    <button type="button" class="btn-close" @onclick="CloseLogDetails"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>Request Information</h6>
-                            <p><strong>Contact:</strong> @selectedLog.ContactWaId</p>
-                            <p><strong>Received:</strong> @selectedLog.RequestReceivedTime.ToString("yyyy-MM-dd HH:mm:ss")</p>
-                            <p><strong>Sent:</strong> @selectedLog.ResponseSentTime?.ToString("yyyy-MM-dd HH:mm:ss")</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Performance</h6>
-                            <p><strong>Total Processing:</strong> @selectedLog.ProcessingDurationMs ms</p>
-                            <p><strong>AI API Call:</strong> @selectedLog.AiApiCallDurationMs ms</p>
-                            <p><strong>Status:</strong> <span class="badge @(selectedLog.Status == "Sent" ? "bg-success" : "bg-danger")">@selectedLog.Status</span></p>
-                        </div>
-                    </div>
-                    
-                    <h6>AI Extracted Data</h6>
-                    <pre class="bg-light p-2 rounded">@selectedLog.AiExtractedData</pre>
-                    
-                    <h6>Tour Details Used</h6>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Template:</strong> @selectedLog.TemplateUsed</p>
-                            <p><strong>Guide:</strong> @selectedLog.GuideNameUsed</p>
-                            <p><strong>Location:</strong> @selectedLog.TourLocationUsed</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Time:</strong> @selectedLog.TourTimeUsed</p>
-                            <p><strong>Contact:</strong> @selectedLog.GuideNumberUsed</p>
-                            <p><strong>Identifier:</strong> @selectedLog.IdentifiableObjectUsed</p>
-                        </div>
-                    </div>
-                    
-                    <h6>Full Response Text</h6>
-                    <div class="bg-light p-3 rounded" style="max-height: 200px; overflow-y: auto;">
-                        <pre style="white-space: pre-wrap; margin: 0;">@selectedLog.FullResponseText</pre>
-                    </div>
-                    
-                    @if (!string.IsNullOrEmpty(selectedLog.ErrorMessage))
-                    {
-                        <h6 class="text-danger">Error Message</h6>
-                        <div class="alert alert-danger">
-                            @selectedLog.ErrorMessage
-                        </div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseLogDetails">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
-<!-- Resend Message Dialog -->
-@if (showResendDialog && selectedLogForAction != null)
-{
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Resend Message</h5>
-                    <button type="button" class="btn-close" @onclick="CloseActionDialogs"></button>
-                </div>
-                <div class="modal-body">
-                    <p><strong>Contact:</strong> @selectedLogForAction.ContactWaId</p>
-                    <p><strong>Original Message:</strong></p>
-                    <div class="bg-light p-2 rounded mb-3" style="max-height: 150px; overflow-y: auto;">
-                        <small>@selectedLogForAction.FullResponseText</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Modify message before resending (optional):</label>
-                        <textarea class="form-control" rows="4" @bind="resendMessageText" placeholder="Leave empty to resend original message"></textarea>
-                    </div>
-                    
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i> This will send a new WhatsApp message to the customer.
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseActionDialogs">Cancel</button>
-                    <button type="button" class="btn btn-success" @onclick="ConfirmResendMessage">
-                        <i class="bi bi-send"></i> Resend Message
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
-<!-- Contact Customer Dialog -->
-@if (showContactDialog && selectedLogForAction != null)
-{
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Contact Customer</h5>
-                    <button type="button" class="btn-close" @onclick="CloseActionDialogs"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h6>Customer Information</h6>
-                            <p><strong>WhatsApp ID:</strong> @selectedLogForAction.ContactWaId</p>
-                            <p><strong>Last Contact:</strong> @selectedLogForAction.RequestReceivedTime.ToString("yyyy-MM-dd HH:mm")</p>
-                            <p><strong>Tour Guide:</strong> @selectedLogForAction.GuideNameUsed</p>
-                            <p><strong>Guide Phone:</strong> @selectedLogForAction.GuideNumberUsed</p>
-                        </div>
-                        <div class="col-md-6">
-                            <h6>Tour Details</h6>
-                            <p><strong>Tour Type:</strong> @selectedLogForAction.TemplateUsed</p>
-                            <p><strong>Location:</strong> @selectedLogForAction.TourLocationUsed</p>
-                            <p><strong>Time:</strong> @selectedLogForAction.TourTimeUsed</p>
-                            <p><strong>Status:</strong> <span class="badge @(selectedLogForAction.Status == "Sent" ? "bg-success" : "bg-danger")">@selectedLogForAction.Status</span></p>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Contact Method:</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="contactMethod" id="whatsapp" value="whatsapp" @onchange="OnContactMethodChanged" checked="@(contactMethod == "whatsapp")">
-                            <label class="form-check-label" for="whatsapp">
-                                <i class="bi bi-whatsapp text-success"></i> WhatsApp Message
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="contactMethod" id="phone" value="phone" @onchange="OnContactMethodChanged">
-                            <label class="form-check-label" for="phone">
-                                <i class="bi bi-telephone text-primary"></i> Phone Call
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="contactMethod" id="guide" value="guide" @onchange="OnContactMethodChanged">
-                            <label class="form-check-label" for="guide">
-                                <i class="bi bi-person text-warning"></i> Connect to Tour Guide
-                            </label>
-                        </div>
-                    </div>
-                    
-                    @if (contactMethod == "whatsapp")
-                    {
-                        <div class="mb-3">
-                            <label class="form-label">Message to send:</label>
-                            <textarea class="form-control" rows="3" @bind="contactMessageText" placeholder="Enter your message..."></textarea>
-                        </div>
-                    }
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseActionDialogs">Cancel</button>
-                    <button type="button" class="btn btn-primary" @onclick="ConfirmContactCustomer">
-                        <i class="bi bi-telephone"></i> Contact Customer
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
-<!-- Review Dialog -->
-@if (showReviewDialog && selectedLogForAction != null)
-{
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Mark as Reviewed</h5>
-                    <button type="button" class="btn-close" @onclick="CloseActionDialogs"></button>
-                </div>
-                <div class="modal-body">
-                    <p><strong>Contact:</strong> @selectedLogForAction.ContactWaId</p>
-                    <p><strong>Response Time:</strong> @selectedLogForAction.RequestReceivedTime.ToString("yyyy-MM-dd HH:mm:ss")</p>
-                    <p><strong>Current Status:</strong> <span class="badge @(selectedLogForAction.Status == "Sent" ? "bg-success" : "bg-danger")">@selectedLogForAction.Status</span></p>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Review Status:</label>
-                        <select class="form-select" @bind="reviewStatus">
-                            <option value="approved">APPROVED - Response was appropriate</option>
-                            <option value="needs-improvement">NEEDS IMPROVEMENT - Minor issues</option>
-                            <option value="rejected">REJECTED - Response was inappropriate</option>
-                            <option value="follow-up-required">FOLLOW-UP REQUIRED - Manual contact needed</option>
-                        </select>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Review Notes:</label>
-                        <textarea class="form-control" rows="3" @bind="reviewNotes" placeholder="Add any notes about this automated response..."></textarea>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Reviewer:</label>
-                        <input type="text" class="form-control" @bind="reviewerName" placeholder="Your name">
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseActionDialogs">Cancel</button>
-                    <button type="button" class="btn btn-warning" @onclick="ConfirmReview">
-                        <i class="bi bi-check-square"></i> Save Review
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
-<!-- Export Data Dialog -->
-@if (showExportDialog && selectedLogForAction != null)
-{
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Export Response Data</h5>
-                    <button type="button" class="btn-close" @onclick="CloseActionDialogs"></button>
-                </div>
-                <div class="modal-body">
-                    <p><strong>Contact:</strong> @selectedLogForAction.ContactWaId</p>
-                    <p><strong>Response ID:</strong> #@selectedLogForAction.Id</p>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Export Format:</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="exportFormat" id="json" value="json" @onchange="OnExportFormatChanged" checked="@(exportFormat == "json")">
-                            <label class="form-check-label" for="json">
-                                <i class="bi bi-filetype-json"></i> JSON Format
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="exportFormat" id="csv" value="csv" @onchange="OnExportFormatChanged">
-                            <label class="form-check-label" for="csv">
-                                <i class="bi bi-filetype-csv"></i> CSV Format
-                            </label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="exportFormat" id="pdf" value="pdf" @onchange="OnExportFormatChanged">
-                            <label class="form-check-label" for="pdf">
-                                <i class="bi bi-filetype-pdf"></i> PDF Report
-                            </label>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Include Data:</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="includeResponse" @bind="includeResponseText">
-                            <label class="form-check-label" for="includeResponse">Full Response Text</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="includeAiData" @bind="includeAiData">
-                            <label class="form-check-label" for="includeAiData">AI Extracted Data</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="includePerformance" @bind="includePerformanceData">
-                            <label class="form-check-label" for="includePerformance">Performance Metrics</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="includeTourDetails" @bind="includeTourDetails">
-                            <label class="form-check-label" for="includeTourDetails">Tour Details</label>
-                        </div>
-                    </div>
-                    
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i> Export will be generated and downloaded automatically.
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="CloseActionDialogs">Cancel</button>
-                    <button type="button" class="btn btn-success" @onclick="ConfirmExport">
-                        <i class="bi bi-download"></i> Export Data
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-}
-
-<!-- Bulk Export Dialog -->
-@if (showBulkExportDialog)
-{
-    <div class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" style="background-color: rgba(0,0,0,0.5); z-index: 1050;">
-        <div class="bg-white rounded shadow-lg" style="width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto;">
-            <div class="border-bottom p-3 d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">Bulk Export - @bulkExportType</h5>
-                <button type="button" class="btn-close" @onclick="CloseBulkExportDialog"></button>
-            </div>
-            <div class="p-3">
-                    @if (bulkExportType == "by-contact")
-                    {
-                        <div class="mb-3">
-                            <label class="form-label">Select Contact:</label>
-                            <select class="form-select" @bind="selectedContactForExport">
-                                <option value="">-- Select a contact --</option>
-                                @if (logs != null)
-                                {
-                                    @foreach (var contact in logs.Select(l => l.ContactWaId).Distinct())
-                                    {
-                                        <option value="@contact">@contact</option>
-                                    }
-                                }
-                            </select>
-                        </div>
-                    }
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Export Format:</label>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="bulkExportFormat" id="bulkJson" value="json" @onchange="OnBulkExportFormatChanged" checked="@(bulkExportFormat == "json")">
-                                    <label class="form-check-label" for="bulkJson">
-                                        <i class="bi bi-filetype-json"></i> JSON Format
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="bulkExportFormat" id="bulkCsv" value="csv" @onchange="OnBulkExportFormatChanged">
-                                    <label class="form-check-label" for="bulkCsv">
-                                        <i class="bi bi-filetype-csv"></i> CSV Format
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="bulkExportFormat" id="bulkExcel" value="excel" @onchange="OnBulkExportFormatChanged">
-                                    <label class="form-check-label" for="bulkExcel">
-                                        <i class="bi bi-file-earmark-excel"></i> Excel Format
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label class="form-label">Date Range:</label>
-                                <div class="mb-2">
-                                    <label class="form-label">From:</label>
-                                    <input type="date" class="form-control" @bind="bulkExportFromDate">
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label">To:</label>
-                                    <input type="date" class="form-control" @bind="bulkExportToDate">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Include Data:</label>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="bulkIncludeMessages" @bind="bulkIncludeMessages">
-                                    <label class="form-check-label" for="bulkIncludeMessages">Message Content</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="bulkIncludeTimestamps" @bind="bulkIncludeTimestamps">
-                                    <label class="form-check-label" for="bulkIncludeTimestamps">Timestamps</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="bulkIncludeContacts" @bind="bulkIncludeContacts">
-                                    <label class="form-check-label" for="bulkIncludeContacts">Contact Information</label>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="bulkIncludeAiData" @bind="bulkIncludeAiData">
-                                    <label class="form-check-label" for="bulkIncludeAiData">AI Analysis Data</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="bulkIncludePerformance" @bind="bulkIncludePerformance">
-                                    <label class="form-check-label" for="bulkIncludePerformance">Performance Metrics</label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" id="bulkIncludeTours" @bind="bulkIncludeTours">
-                                    <label class="form-check-label" for="bulkIncludeTours">Tour Details</label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle"></i> 
-                        @GetBulkExportDescription()
-                    </div>
-            </div>
-            <div class="border-top p-3 d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-secondary" @onclick="CloseBulkExportDialog">Cancel</button>
-                <button type="button" class="btn btn-success" @onclick="ConfirmBulkExport" disabled="@(bulkExportType == "by-contact" && string.IsNullOrEmpty(selectedContactForExport))">
-                    <i class="bi bi-download"></i> Export Data
-                </button>
-            </div>
-        </div>
-    </div>
-}
-
-@if (showSuccessMessage)
-{
-    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050;">
-        <div class="toast show" role="alert">
-            <div class="toast-header bg-success text-white">
-                <i class="bi bi-check-circle me-2"></i>
-                <strong class="me-auto">Success</strong>
-                <button type="button" class="btn-close btn-close-white" @onclick="() => showSuccessMessage = false"></button>
-            </div>
-            <div class="toast-body">
-                @successMessage
-            </div>
-        </div>
-    </div>
-}
-
-@if (showErrorMessage)
-{
-    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050;">
-        <div class="toast show" role="alert">
-            <div class="toast-header bg-danger text-white">
-                <i class="bi bi-exclamation-triangle me-2"></i>
-                <strong class="me-auto">Error</strong>
-                <button type="button" class="btn-close btn-close-white" @onclick="() => showErrorMessage = false"></button>
-            </div>
-            <div class="toast-body">
-                @errorMessage
-            </div>
-        </div>
-    </div>
-}
 
 @code {
     private List<AutomatedResponseLog>? logs;
-    private AutomatedResponseLog? selectedLog;
     private int totalContacts = 0;
     private int totalMessages = 0;
     private int automatedResponsesToday = 0;
     private double successRate = 0;
-    private int averageProcessingTime = 0;
-    private int averageAiTime = 0;
-    private Dictionary<string, int>? tourTypeStats;
-    private bool showResendDialog = false;
-    private bool showContactDialog = false;
-    private bool showReviewDialog = false;
-    private bool showExportDialog = false;
-    private AutomatedResponseLog? selectedLogForAction;
-    private string resendMessageText = "";
-    private string contactMessageText = "";
-    private string reviewStatus = "approved";
-    private string reviewNotes = "";
-    private string reviewerName = "Admin User";
-    private string contactMethod = "whatsapp";
-    private bool includeResponseText = true;
-    private bool includeAiData = true;
-    private bool includePerformanceData = true;
-    private bool includeTourDetails = true;
-    private string exportFormat = "json";
-    private bool showBulkExportDialog = false;
-    private string bulkExportType = "";
-    private string selectedContactForExport = "";
-    private string bulkExportFormat = "json";
-    private DateTime bulkExportFromDate = DateTime.Today;
-    private DateTime bulkExportToDate = DateTime.Today.AddDays(1);
-    private bool bulkIncludeMessages = true;
-    private bool bulkIncludeTimestamps = true;
-    private bool bulkIncludeContacts = true;
-    private bool bulkIncludeAiData = true;
-    private bool bulkIncludePerformance = true;
-    private bool bulkIncludeTours = true;
-    private string successMessage = "";
+    private bool isLoading = false;
+    private bool dataLoaded = false;
     private string errorMessage = "";
-    private bool showSuccessMessage = false;
-    private bool showErrorMessage = false;
+    private DateTime lastUpdated = DateTime.Now;
 
+    // No automatic loading in OnInitializedAsync - everything is lazy loaded
     protected override async Task OnInitializedAsync()
     {
+        // Just initialize the component, no data loading
+        await Task.CompletedTask;
+    }
+
+    private async Task LoadDataAsync()
+    {
+        if (isLoading) return;
+
         try
         {
-            // Load simple data first
-            LoadSimpleStatistics();
-            LoadSimpleLogs();
+            isLoading = true;
+            errorMessage = "";
+            StateHasChanged();
+
+            // Simulate API delay for testing
+            await Task.Delay(500);
+
+            // Load statistics first
+            await LoadStatistics();
+
+            // Then load logs
+            await LoadLogs();
+
+            dataLoaded = true;
+            lastUpdated = DateTime.Now;
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error loading data: {ex.Message}";
-            showErrorMessage = true;
+            errorMessage = $"Failed to load data: {ex.Message}";
+            dataLoaded = false;
         }
-    }
-
-    private async Task LoadAnalyticsData()
-    {
-        await LoadStatistics();
-        await LoadLogs();
-    }
-
-    private void LoadSimpleStatistics()
-    {
-        totalContacts = 5;
-        totalMessages = 12;
-        automatedResponsesToday = 3;
-        successRate = 100.0;
-        averageProcessingTime = 1240;
-        averageAiTime = 825;
-
-        tourTypeStats = new Dictionary<string, int>
+        finally
         {
-            ["Food Tour"] = 2,
-            ["Walking Tour"] = 1,
-            ["Historical Tour"] = 1
-        };
-    }
-
-    private void LoadSimpleLogs()
-    {
-        logs = new List<AutomatedResponseLog>
-        {
-            new AutomatedResponseLog
-            {
-                Id = 1,
-                IncomingMessageId = 1,
-                ContactWaId = "1234567890",
-                RequestReceivedTime = DateTime.Now.AddMinutes(-10),
-                ResponseSentTime = DateTime.Now.AddMinutes(-9),
-                ProcessingDurationMs = 1250,
-                AiApiCallDurationMs = 800,
-                TemplateUsed = "Food Tour",
-                CompanyNameUsed = "NYC Tours",
-                GuideNameUsed = "Maria",
-                TourLocationUsed = "Little Italy",
-                TourTimeUsed = "2 PM",
-                IdentifiableObjectUsed = "company sign",
-                GuideNumberUsed = "(555) 123-4567",
-                FullResponseText = "Hello! Your tour guide Maria will meet you at Little Italy at 2 PM.",
-                Status = "Sent",
-                AiExtractedData = @"{""userName"":""John"",""tourType"":""Food Tour""}"
-            },
-            new AutomatedResponseLog
-            {
-                Id = 2,
-                IncomingMessageId = 4,
-                ContactWaId = "0987654321",
-                RequestReceivedTime = DateTime.Now.AddMinutes(-20),
-                ResponseSentTime = DateTime.Now.AddMinutes(-18),
-                ProcessingDurationMs = 1100,
-                AiApiCallDurationMs = 750,
-                TemplateUsed = "Walking Tour",
-                CompanyNameUsed = "NYC Tours",
-                GuideNameUsed = "Tom",
-                TourLocationUsed = "Central Park",
-                TourTimeUsed = "9 AM",
-                IdentifiableObjectUsed = "company sign",
-                GuideNumberUsed = "(555) 234-5678",
-                FullResponseText = "Hello! Your tour guide Tom will meet you at Central Park at 9 AM.",
-                Status = "Sent",
-                AiExtractedData = @"{""userName"":""Sarah"",""tourType"":""Walking Tour""}"
-            }
-        };
-    }
-
-    private async Task LoadStatistics()
-    {
-        // Sample statistics - replace with actual API call
-        totalContacts = 5;
-        totalMessages = 12;
-        automatedResponsesToday = 3;
-        successRate = 100.0;
-        averageProcessingTime = 1240;
-        averageAiTime = 825;
-
-        tourTypeStats = new Dictionary<string, int>
-        {
-            ["Food Tour"] = 2,
-            ["Walking Tour"] = 1,
-            ["Historical Tour"] = 1,
-            ["Art Tour"] = 1,
-            ["Photography Tour"] = 1
-        };
-    }
-
-    private async Task LoadLogs()
-    {
-        await Task.Delay(200); // Simulate API delay
-
-        // Sample logs - replace with actual API call
-        logs = new List<AutomatedResponseLog>
-        {
-            new AutomatedResponseLog
-            {
-                Id = 1,
-                IncomingMessageId = 1,
-                ContactWaId = "1234567890",
-                RequestReceivedTime = DateTime.Now.AddMinutes(-10),
-                ResponseSentTime = DateTime.Now.AddMinutes(-9),
-                ProcessingDurationMs = 1250,
-                AiApiCallDurationMs = 800,
-                TemplateUsed = "Food Tour Template",
-                CompanyNameUsed = "NYC Adventure Tours",
-                GuideNameUsed = "Maria",
-                TourLocationUsed = "Little Italy",
-                TourTimeUsed = "2 PM",
-                IdentifiableObjectUsed = "a small sign with our company logo",
-                GuideNumberUsed = "(555) 123-4567",
-                FullResponseText = "Hello John! Thank you for booking your tour with NYC Adventure Tours. Your tour guide Maria will meet you at Little Italy at 2 PM. Look for a small sign with our company logo. If you need to reach your guide directly, you can contact them at: (555) 123-4567. Our food tour will take you through the best authentic Italian restaurants and hidden gems in the neighborhood. You'll taste amazing pasta, pizza, and gelato while learning about the area's rich history. We look forward to showing you an amazing time! If you have any questions before your tour, feel free to reach out.",
-                Status = "Sent",
-                AiExtractedData = @"{""userName"":""John"",""tourType"":""Food Tour"",""date"":""tomorrow"",""time"":""2 PM""}"
-            },
-            new AutomatedResponseLog
-            {
-                Id = 2,
-                IncomingMessageId = 4,
-                ContactWaId = "0987654321",
-                RequestReceivedTime = DateTime.Now.AddMinutes(-20),
-                ResponseSentTime = DateTime.Now.AddMinutes(-18),
-                ProcessingDurationMs = 1100,
-                AiApiCallDurationMs = 750,
-                TemplateUsed = "Walking Tour Template",
-                CompanyNameUsed = "NYC Adventure Tours",
-                GuideNameUsed = "Tom",
-                TourLocationUsed = "Central Park Entrance",
-                TourTimeUsed = "9 AM",
-                IdentifiableObjectUsed = "a small sign with our company logo",
-                GuideNumberUsed = "(555) 234-5678",
-                FullResponseText = "Hello Sarah! Thank you for booking your tour with NYC Adventure Tours. Your tour guide Tom will meet you at Central Park Entrance at 9 AM. Look for a small sign with our company logo. If you need to reach your guide directly, you can contact them at: (555) 234-5678. Our walking tour covers the most scenic routes through Central Park and surrounding neighborhoods. You'll discover hidden paths, historical landmarks, and beautiful viewpoints perfect for photos. We look forward to showing you an amazing time! If you have any questions before your tour, feel free to reach out.",
-                Status = "Sent",
-                AiExtractedData = @"{""userName"":""Sarah"",""tourType"":""Walking Tour"",""date"":""weekend"",""time"":""morning""}"
-            },
-            new AutomatedResponseLog
-            {
-                Id = 3,
-                IncomingMessageId = 7,
-                ContactWaId = "5555555555",
-                RequestReceivedTime = DateTime.Now.AddHours(-3),
-                ResponseSentTime = DateTime.Now.AddHours(-2),
-                ProcessingDurationMs = 1350,
-                AiApiCallDurationMs = 900,
-                TemplateUsed = "Historical Tour Template",
-                CompanyNameUsed = "NYC Adventure Tours",
-                GuideNameUsed = "Professor Williams",
-                TourLocationUsed = "City Hall",
-                TourTimeUsed = "6 PM",
-                IdentifiableObjectUsed = "a small sign with our company logo",
-                GuideNumberUsed = "(555) 345-6789",
-                FullResponseText = "Hello Mike! Thank you for booking your tour with NYC Adventure Tours. Your tour guide Professor Williams will meet you at City Hall at 6 PM. Look for a small sign with our company logo. If you need to reach your guide directly, you can contact them at: (555) 345-6789. Our historical tour will take you through centuries of New York history, from colonial times to modern day. You'll visit significant landmarks and hear fascinating stories about the people who shaped this great city. We look forward to showing you an amazing time! If you have any questions before your tour, feel free to reach out.",
-                Status = "Sent",
-                AiExtractedData = @"{""userName"":""Mike"",""tourType"":""Historical Tour"",""date"":""Friday"",""time"":""6 PM""}"
-            }
-        };
-    }
-
-    private async Task RefreshLogs()
-    {
-        logs = null;
-        StateHasChanged();
-        await LoadAnalyticsData();
-    }
-
-    private void ShowLogDetails(AutomatedResponseLog log)
-    {
-        successMessage = $"View Details clicked for log {log.Id}!";
-        showSuccessMessage = true;
-    }
-
-    private void CloseLogDetails()
-    {
-        selectedLog = null;
-    }
-
-    private string GetExtractedDataSummary(string? aiData)
-    {
-        if (string.IsNullOrEmpty(aiData)) return "No data";
-        
-        try
-        {
-            // Simple parsing for display - in real app, use JSON deserializer
-            if (aiData.Contains("userName"))
-            {
-                var parts = aiData.Replace("{", "").Replace("}", "").Replace("\"", "").Split(',');
-                var summary = string.Join(", ", parts.Take(2));
-                return summary.Length > 30 ? summary.Substring(0, 30) + "..." : summary;
-            }
-        }
-        catch
-        {
-            // Ignore parsing errors
-        }
-        
-        return "Data available";
-    }
-
-    private void ShowResendDialog(AutomatedResponseLog log)
-    {
-        successMessage = $"Resend clicked for log {log.Id}!";
-        showSuccessMessage = true;
-    }
-
-    private void CloseActionDialogs()
-    {
-        selectedLogForAction = null;
-        showResendDialog = false;
-        showContactDialog = false;
-        showReviewDialog = false;
-        showExportDialog = false;
-    }
-
-    private void ShowContactDialog(AutomatedResponseLog log)
-    {
-        successMessage = $"Contact clicked for log {log.Id}!";
-        showSuccessMessage = true;
-    }
-
-    private void ShowReviewDialog(AutomatedResponseLog log)
-    {
-        successMessage = $"Review clicked for log {log.Id}!";
-        showSuccessMessage = true;
-    }
-
-    private void ShowExportDialog(AutomatedResponseLog log)
-    {
-        successMessage = $"Export clicked for log {log.Id}!";
-        showSuccessMessage = true;
-    }
-
-    private async Task ConfirmResendMessage()
-    {
-        if (selectedLogForAction == null) return;
-        
-        try
-        {
-            // Call the API to resend the message
-            var customMessage = string.IsNullOrWhiteSpace(resendMessageText) ? null : resendMessageText;
-            var success = await ApiService.ResendMessageAsync(selectedLogForAction.Id, customMessage);
-            
-            if (success)
-            {
-                successMessage = "Message resent successfully!";
-                showSuccessMessage = true;
-            }
-            else
-            {
-                errorMessage = "Failed to resend message. Please try again.";
-                showErrorMessage = true;
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error resending message: {ex.Message}";
-            showErrorMessage = true;
-        }
-        
-        // Reset form
-        resendMessageText = "";
-        showResendDialog = false;
-        selectedLogForAction = null;
-        
-        StateHasChanged();
-        
-        // Auto-hide messages after 3 seconds
-        _ = Task.Delay(3000).ContinueWith(_ => {
-            showSuccessMessage = false;
-            showErrorMessage = false;
-            InvokeAsync(StateHasChanged);
-        });
-    }
-
-    private async Task ConfirmContactCustomer()
-    {
-        if (selectedLogForAction == null) return;
-        
-        try
-        {
-            // Call the API to initiate customer contact
-            var message = contactMethod == "whatsapp" ? contactMessageText : null;
-            var success = await ApiService.ContactCustomerAsync(selectedLogForAction.ContactWaId, contactMethod, message);
-            
-            if (success)
-            {
-                successMessage = $"Customer contact initiated via {contactMethod}!";
-                showSuccessMessage = true;
-            }
-            else
-            {
-                errorMessage = "Failed to initiate customer contact. Please try again.";
-                showErrorMessage = true;
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error contacting customer: {ex.Message}";
-            showErrorMessage = true;
-        }
-        
-        // Reset form
-        contactMessageText = "";
-        contactMethod = "whatsapp";
-        showContactDialog = false;
-        selectedLogForAction = null;
-        
-        StateHasChanged();
-        
-        // Auto-hide messages after 3 seconds
-        _ = Task.Delay(3000).ContinueWith(_ => {
-            showSuccessMessage = false;
-            showErrorMessage = false;
-            InvokeAsync(StateHasChanged);
-        });
-    }
-
-    private async Task ConfirmReview()
-    {
-        if (selectedLogForAction == null) return;
-        
-        try
-        {
-            // Call the API to save the review
-            var success = await ApiService.ReviewLogAsync(selectedLogForAction.Id, reviewStatus, reviewNotes, reviewerName);
-            
-            if (success)
-            {
-                successMessage = "Review saved successfully!";
-                showSuccessMessage = true;
-            }
-            else
-            {
-                errorMessage = "Failed to save review. Please try again.";
-                showErrorMessage = true;
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error saving review: {ex.Message}";
-            showErrorMessage = true;
-        }
-        
-        // Reset form
-        reviewStatus = "approved";
-        reviewNotes = "";
-        reviewerName = "Admin User";
-        showReviewDialog = false;
-        selectedLogForAction = null;
-        
-        StateHasChanged();
-        
-        // Auto-hide messages after 3 seconds
-        _ = Task.Delay(3000).ContinueWith(_ => {
-            showSuccessMessage = false;
-            showErrorMessage = false;
-            InvokeAsync(StateHasChanged);
-        });
-    }
-
-    private async Task ConfirmExport()
-    {
-        if (selectedLogForAction == null) return;
-        
-        try
-        {
-            // Call the API to export the data
-            var options = new Services.ExportOptions
-            {
-                IncludeResponseText = includeResponseText,
-                IncludeAiData = includeAiData,
-                IncludePerformanceData = includePerformanceData,
-                IncludeTourDetails = includeTourDetails,
-                ExportedBy = "Admin User"
-            };
-            
-            var exportData = await ApiService.ExportLogDataAsync(selectedLogForAction.Id, exportFormat, options);
-            
-            if (exportData != null && exportData.Length > 0)
-            {
-                // Trigger file download
-                var fileName = $"response_{selectedLogForAction.Id}_{DateTime.Now:yyyyMMdd_HHmmss}.{exportFormat}";
-                await DownloadFile(exportData, fileName, GetMimeType(exportFormat));
-                
-                successMessage = "Export completed successfully!";
-                showSuccessMessage = true;
-            }
-            else
-            {
-                errorMessage = "Failed to export data. Please try again.";
-                showErrorMessage = true;
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error exporting data: {ex.Message}";
-            showErrorMessage = true;
-        }
-        
-        // Reset form
-        exportFormat = "json";
-        includeResponseText = true;
-        includeAiData = true;
-        includePerformanceData = true;
-        includeTourDetails = true;
-        showExportDialog = false;
-        selectedLogForAction = null;
-        
-        StateHasChanged();
-        
-        // Auto-hide messages after 3 seconds
-        _ = Task.Delay(3000).ContinueWith(_ => {
-            showSuccessMessage = false;
-            showErrorMessage = false;
-            InvokeAsync(StateHasChanged);
-        });
-    }
-
-    private void OnContactMethodChanged(ChangeEventArgs e)
-    {
-        contactMethod = e.Value?.ToString() ?? "whatsapp";
-        StateHasChanged();
-    }
-
-    private void OnExportFormatChanged(ChangeEventArgs e)
-    {
-        exportFormat = e.Value?.ToString() ?? "json";
-        StateHasChanged();
-    }
-
-    private void ShowBulkExportDialog(string type)
-    {
-        try
-        {
-            bulkExportType = type;
-            showBulkExportDialog = true;
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error: {ex.Message}";
-            showErrorMessage = true;
-        }
-    }
-
-    private void CloseBulkExportDialog()
-    {
-        showBulkExportDialog = false;
-    }
-
-    private string GetBulkExportDescription()
-    {
-        switch (bulkExportType)
-        {
-            case "all":
-                return "This will export all messages in the selected format and date range.";
-            case "sent":
-                return "This will export all sent messages in the selected format and date range.";
-            case "received":
-                return "This will export all received messages in the selected format and date range.";
-            case "by-contact":
-                return "This will export messages from the selected contact in the selected format and date range.";
-            default:
-                return "This will export messages in the selected format and date range.";
-        }
-    }
-
-    private async Task ConfirmBulkExport()
-    {
-        if (bulkExportType == "by-contact" && string.IsNullOrEmpty(selectedContactForExport)) return;
-        
-        try
-        {
-            // Call the API to export the data
-            var options = new Services.ExportOptions
-            {
-                IncludeResponseText = bulkIncludeMessages,
-                IncludeAiData = bulkIncludeAiData,
-                IncludePerformanceData = bulkIncludePerformance,
-                IncludeTourDetails = bulkIncludeTours,
-                ExportedBy = "Admin User"
-            };
-            
-            var exportData = await ApiService.ExportBulkLogDataAsync(bulkExportType, bulkExportFormat, bulkExportFromDate, bulkExportToDate, selectedContactForExport, options);
-            
-            if (exportData != null && exportData.Length > 0)
-            {
-                // Trigger file download
-                var fileName = $"bulk_export_{bulkExportType}_{DateTime.Now:yyyyMMdd_HHmmss}.{bulkExportFormat}";
-                await DownloadFile(exportData, fileName, GetMimeType(bulkExportFormat));
-                
-                successMessage = "Bulk export completed successfully!";
-                showSuccessMessage = true;
-            }
-            else
-            {
-                errorMessage = "Failed to export data. Please try again.";
-                showErrorMessage = true;
-            }
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error exporting data: {ex.Message}";
-            showErrorMessage = true;
-        }
-        
-        // Reset form
-        bulkExportType = "";
-        selectedContactForExport = "";
-        bulkExportFormat = "json";
-        bulkIncludeMessages = true;
-        bulkIncludeAiData = true;
-        bulkIncludePerformance = true;
-        bulkIncludeTours = true;
-        showBulkExportDialog = false;
-        
-        StateHasChanged();
-        
-        // Auto-hide messages after 3 seconds
-        _ = Task.Delay(3000).ContinueWith(_ => {
-            showSuccessMessage = false;
-            showErrorMessage = false;
-            InvokeAsync(StateHasChanged);
-        });
-    }
-
-    private void OnBulkExportFormatChanged(ChangeEventArgs e)
-    {
-        bulkExportFormat = e.Value?.ToString() ?? "json";
-        StateHasChanged();
-    }
-
-    private void ShowBulkExportAllMessages()
-    {
-        successMessage = "Export All Messages clicked!";
-        showSuccessMessage = true;
-    }
-
-    private void ShowBulkExportSentMessages()
-    {
-        successMessage = "Export Sent Messages clicked!";
-        showSuccessMessage = true;
-    }
-
-    private void ShowBulkExportReceivedMessages()
-    {
-        successMessage = "Export Received Messages clicked!";
-        showSuccessMessage = true;
-    }
-
-    private void ShowBulkExportByContact()
-    {
-        successMessage = "Export By Contact clicked!";
-        showSuccessMessage = true;
-    }
-
-    private void TestButtonClick()
-    {
-        successMessage = "Test button works! Blazor Server is responding.";
-        showSuccessMessage = true;
-    }
-
-    private void SimpleTest()
-    {
-        successMessage = "Simple test works!";
-        showSuccessMessage = true;
-    }
-
-    private async Task DownloadFile(byte[] data, string fileName, string mimeType)
-    {
-        try
-        {
-            var base64 = Convert.ToBase64String(data);
-            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, mimeType, base64);
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error downloading file: {ex.Message}";
-            showErrorMessage = true;
+            isLoading = false;
             StateHasChanged();
         }
     }
 
-    private string GetMimeType(string format)
+    private async Task RefreshData()
     {
-        return format.ToLower() switch
+        if (!dataLoaded) return;
+        await LoadDataAsync();
+    }
+
+    private async Task LoadStatistics()
+    {
+        try
         {
-            "json" => "application/json",
-            "csv" => "text/csv",
-            "excel" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "pdf" => "application/pdf",
-            _ => "application/octet-stream"
-        };
+            // Call the real API to get system statistics
+            var stats = await ApiService.GetSystemStatsAsync();
+            
+            if (stats != null)
+            {
+                totalContacts = stats.TotalContacts;
+                totalMessages = stats.TotalAutomatedResponses;
+                automatedResponsesToday = stats.ResponsesLast24Hours;
+                successRate = stats.SuccessfulResponses > 0 && stats.TotalAutomatedResponses > 0 
+                    ? (double)stats.SuccessfulResponses / stats.TotalAutomatedResponses * 100 
+                    : 0;
+            }
+            else
+            {
+                // Fallback to default values if API returns null
+                totalContacts = 0;
+                totalMessages = 0;
+                automatedResponsesToday = 0;
+                successRate = 0;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading statistics: {ex.Message}", ex);
+        }
+    }
+
+    private async Task LoadLogs()
+    {
+        try
+        {
+            // Call the real API to get automated response logs
+            logs = await ApiService.GetAutomatedResponseLogsAsync();
+            
+            // Ensure logs is never null
+            if (logs == null)
+            {
+                logs = new List<AutomatedResponseLog>();
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error loading logs: {ex.Message}", ex);
+        }
+    }
+
+    private void ClearError()
+    {
+        errorMessage = "";
     }
 } 

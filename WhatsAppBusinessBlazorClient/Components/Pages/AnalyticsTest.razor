@@ -1,0 +1,13 @@
+@page "/analytics-test"
+@rendermode InteractiveServer
+
+<PageTitle>Analytics Test - New Page</PageTitle>
+
+<h1>Brand New Analytics Test Page</h1>
+<p>This is a completely new file to test if the issue is route-specific.</p>
+<p>Current time: @DateTime.Now.ToString("HH:mm:ss")</p>
+<p>If this page works, the issue is with the original Analytics.razor file.</p>
+
+@code {
+    // Absolutely minimal - no injections, no async, no complex logic
+} 

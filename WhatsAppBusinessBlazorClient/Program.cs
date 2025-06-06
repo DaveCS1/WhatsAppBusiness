@@ -36,14 +36,12 @@ builder.Services.AddSignalR(options =>
 
 // Configure API base URL - back to HTTP for now
 var apiBaseUrl = "http://localhost:5260";
-Console.WriteLine($"🔧 API Base URL: {apiBaseUrl}");
 
 // Add HttpClient with base address
 builder.Services.AddHttpClient<ApiService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
-    Console.WriteLine($"🔧 HttpClient configured with base address: {client.BaseAddress}");
 });
 
 // Configure API settings

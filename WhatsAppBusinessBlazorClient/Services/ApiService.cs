@@ -376,12 +376,13 @@ namespace WhatsAppBusinessBlazorClient.Services
     public class SystemStats
     {
         public int TotalContacts { get; set; }
-        public int TotalMessages { get; set; }
-        public int AutomatedResponsesToday { get; set; }
-        public double SuccessRate { get; set; }
-        public int AverageProcessingTimeMs { get; set; }
-        public int AverageAiTimeMs { get; set; }
-        public Dictionary<string, int> TourTypeDistribution { get; set; } = new();
+        public int TotalAutomatedResponses { get; set; }
+        public int SuccessfulResponses { get; set; }
+        public int FailedResponses { get; set; }
+        public double AverageProcessingTime { get; set; }
+        public double AverageAiCallTime { get; set; }
+        public DateTime? LastResponseTime { get; set; }
+        public int ResponsesLast24Hours { get; set; }
     }
 
     public class ExportOptions
