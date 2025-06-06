@@ -1,0 +1,662 @@
+@page "/exports"
+@rendermode InteractiveServer
+@using WhatsAppBusinessBlazorClient.Models
+@using WhatsAppBusinessBlazorClient.Services
+@inject ApiService ApiService
+@inject ILogger<Exports> Logger
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Data Exports</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-3">
+                <i class="bi bi-download me-2"></i>
+                Data Exports
+            </h1>
+            <p class="text-muted">Export tour information, contact data, and guide messages for easy sharing and analysis.</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @errorMessage
+            <button type="button" class="btn-close" @onclick="ClearError"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            @successMessage
+            <button type="button" class="btn-close" @onclick="ClearSuccess"></button>
+        </div>
+    }
+
+    <div class="row">
+        <!-- Tours Export -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-map me-2"></i>
+                        Tours Export
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Export tour information with participant details, sorted by date and tour type.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Date Range</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="date" class="form-control form-control-sm" @bind="tourExportRequest.FromDate" />
+                                <small class="text-muted">From</small>
+                            </div>
+                            <div class="col-6">
+                                <input type="date" class="form-control form-control-sm" @bind="tourExportRequest.ToDate" />
+                                <small class="text-muted">To</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Tour Type Filter</label>
+                        <select class="form-select form-select-sm" @bind="tourExportRequest.TourTypeFilter">
+                            <option value="">All Tours</option>
+                            <option value="Walking Tour">Walking Tour</option>
+                            <option value="Food Tour">Food Tour</option>
+                            <option value="Historical Tour">Historical Tour</option>
+                            <option value="Art Tour">Art Tour</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" @bind="tourExportRequest.IncludeParticipants" />
+                            <label class="form-check-label">Include Participants</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" @bind="tourExportRequest.GroupByTour" />
+                            <label class="form-check-label">Group by Tour</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Format</label>
+                        <select class="form-select form-select-sm" @bind="tourExportRequest.Format">
+                            <option value="CSV">CSV (Excel)</option>
+                            <option value="JSON">JSON</option>
+                            <option value="guide-messages">Guide Messages (Text)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-primary w-100" @onclick="ExportTours" disabled="@isExporting">
+                        @if (isExporting && currentExport == "tours")
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        <i class="bi bi-download me-1"></i>
+                        Export Tours
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contacts Export -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-people me-2"></i>
+                        Contacts Export
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Export contact information with tour preferences and message history.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Date Range</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="date" class="form-control form-control-sm" @bind="contactExportRequest.FromDate" />
+                                <small class="text-muted">From</small>
+                            </div>
+                            <div class="col-6">
+                                <input type="date" class="form-control form-control-sm" @bind="contactExportRequest.ToDate" />
+                                <small class="text-muted">To</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Format</label>
+                        <select class="form-select form-select-sm" @bind="contactExportRequest.Format">
+                            <option value="CSV">CSV (Excel)</option>
+                            <option value="JSON">JSON</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <small class="text-muted">
+                            <strong>Includes:</strong> Name, Phone, WhatsApp ID, Last Contact, Tour Preferences, Message Count
+                        </small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-success w-100" @onclick="ExportContacts" disabled="@isExporting">
+                        @if (isExporting && currentExport == "contacts")
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        <i class="bi bi-download me-1"></i>
+                        Export Contacts
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Messages Export -->
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-chat-dots me-2"></i>
+                        Messages Export
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Export all WhatsApp messages with contact information and timestamps.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Date Range</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="date" class="form-control form-control-sm" @bind="messageExportRequest.FromDate" />
+                                <small class="text-muted">From</small>
+                            </div>
+                            <div class="col-6">
+                                <input type="date" class="form-control form-control-sm" @bind="messageExportRequest.ToDate" />
+                                <small class="text-muted">To</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Format</label>
+                        <select class="form-select form-select-sm" @bind="messageExportRequest.Format">
+                            <option value="CSV">CSV (Excel)</option>
+                            <option value="JSON">JSON</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <strong>Includes:</strong> All incoming and outgoing messages, contact names, timestamps, message status
+                        </small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-info w-100" @onclick="ExportMessages" disabled="@isExporting">
+                        @if (isExporting && currentExport == "messages")
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        <i class="bi bi-download me-1"></i>
+                        Export Messages
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Guide Messages Export -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="bi bi-chat-text me-2"></i>
+                        Guide Messages
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Export formatted messages for guides with participant information - perfect for copy/paste!</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Date Range</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="date" class="form-control form-control-sm" @bind="guideExportRequest.FromDate" />
+                                <small class="text-muted">From</small>
+                            </div>
+                            <div class="col-6">
+                                <input type="date" class="form-control form-control-sm" @bind="guideExportRequest.ToDate" />
+                                <small class="text-muted">To</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Tour Type Filter</label>
+                        <select class="form-select form-select-sm" @bind="guideExportRequest.TourTypeFilter">
+                            <option value="">All Tours</option>
+                            <option value="Walking Tour">Walking Tour</option>
+                            <option value="Food Tour">Food Tour</option>
+                            <option value="Historical Tour">Historical Tour</option>
+                            <option value="Art Tour">Art Tour</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Format</label>
+                        <select class="form-select form-select-sm" @bind="guideExportRequest.Format">
+                            <option value="txt">Text Messages</option>
+                            <option value="CSV">CSV (Excel)</option>
+                            <option value="JSON">JSON</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <strong>Perfect for:</strong> Copy/paste messages to guides with participant names, phone numbers, and tour details.
+                        </small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-warning w-100" @onclick="ExportGuideMessages" disabled="@isExporting">
+                        @if (isExporting && currentExport == "guides")
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        <i class="bi bi-download me-1"></i>
+                        Export Guide Messages
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Automated Responses Export -->
+        <div class="col-lg-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="bi bi-robot me-2"></i>
+                        Automated Responses
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Export detailed logs of all automated responses with AI processing data.</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Date Range</label>
+                        <div class="row">
+                            <div class="col-6">
+                                <input type="date" class="form-control form-control-sm" @bind="responseExportRequest.FromDate" />
+                                <small class="text-muted">From</small>
+                            </div>
+                            <div class="col-6">
+                                <input type="date" class="form-control form-control-sm" @bind="responseExportRequest.ToDate" />
+                                <small class="text-muted">To</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Format</label>
+                        <select class="form-select form-select-sm" @bind="responseExportRequest.Format">
+                            <option value="CSV">CSV (Excel)</option>
+                            <option value="JSON">JSON</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <strong>Includes:</strong> Processing times, AI data, templates used, success rates, error details
+                        </small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-secondary w-100" @onclick="ExportAutomatedResponses" disabled="@isExporting">
+                        @if (isExporting && currentExport == "responses")
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        <i class="bi bi-download me-1"></i>
+                        Export Responses
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export History -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Recent Exports
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (!exportHistory.Any())
+                    {
+                        <div class="text-center py-3">
+                            <i class="bi bi-download text-muted" style="font-size: 2rem;"></i>
+                            <p class="text-muted mt-2">No exports yet. Start by exporting some data above!</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Export Type</th>
+                                        <th>Format</th>
+                                        <th>Date Range</th>
+                                        <th>Exported At</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var export in exportHistory.Take(10))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-secondary">@export.Type</span>
+                                            </td>
+                                            <td>@export.Format</td>
+                                            <td>
+                                                <small>@export.DateRange</small>
+                                            </td>
+                                            <td>
+                                                <small>@export.ExportedAt.ToString("MMM dd, HH:mm")</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-success">Success</span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ExportRequest tourExportRequest = new() { ExportType = "Tours", Format = "CSV" };
+    private ExportRequest contactExportRequest = new() { ExportType = "Contacts", Format = "CSV" };
+    private ExportRequest guideExportRequest = new() { ExportType = "GuideMessages", Format = "txt" };
+    private ExportRequest messageExportRequest = new() { ExportType = "Messages", Format = "CSV" };
+    private ExportRequest responseExportRequest = new() { ExportType = "AutomatedResponses", Format = "CSV" };
+    
+    private bool isExporting = false;
+    private string currentExport = "";
+    private string errorMessage = "";
+    private string successMessage = "";
+    
+    private List<ExportHistoryItem> exportHistory = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Set default date range (last 30 days)
+        var today = DateTime.Today;
+        var thirtyDaysAgo = today.AddDays(-30);
+        
+        tourExportRequest.FromDate = thirtyDaysAgo;
+        tourExportRequest.ToDate = today;
+        contactExportRequest.FromDate = thirtyDaysAgo;
+        contactExportRequest.ToDate = today;
+        guideExportRequest.FromDate = thirtyDaysAgo;
+        guideExportRequest.ToDate = today;
+        messageExportRequest.FromDate = thirtyDaysAgo;
+        messageExportRequest.ToDate = today;
+        responseExportRequest.FromDate = thirtyDaysAgo;
+        responseExportRequest.ToDate = today;
+    }
+
+    private async Task ExportTours()
+    {
+        await PerformExport("tours", async () =>
+        {
+            var data = await ApiService.ExportToursAsync(tourExportRequest);
+            if (data != null)
+            {
+                var filename = $"tours_export_{DateTime.Now:yyyyMMdd_HHmmss}.{GetFileExtension(tourExportRequest.Format)}";
+                await DownloadFile(data, filename, GetMimeType(tourExportRequest.Format));
+                
+                AddToHistory("Tours", tourExportRequest.Format, tourExportRequest.FromDate, tourExportRequest.ToDate);
+                successMessage = "Tours exported successfully!";
+            }
+            else
+            {
+                errorMessage = "Failed to export tours. Please try again.";
+            }
+        });
+    }
+
+    private async Task ExportContacts()
+    {
+        await PerformExport("contacts", async () =>
+        {
+            var data = await ApiService.ExportContactsAsync(contactExportRequest);
+            if (data != null)
+            {
+                var filename = $"contacts_export_{DateTime.Now:yyyyMMdd_HHmmss}.{GetFileExtension(contactExportRequest.Format)}";
+                await DownloadFile(data, filename, GetMimeType(contactExportRequest.Format));
+                
+                AddToHistory("Contacts", contactExportRequest.Format, contactExportRequest.FromDate, contactExportRequest.ToDate);
+                successMessage = "Contacts exported successfully!";
+            }
+            else
+            {
+                errorMessage = "Failed to export contacts. Please try again.";
+            }
+        });
+    }
+
+    private async Task ExportGuideMessages()
+    {
+        await PerformExport("guides", async () =>
+        {
+            var data = await ApiService.ExportGuideMessagesAsync(guideExportRequest);
+            if (data != null)
+            {
+                var filename = $"guide_messages_{DateTime.Now:yyyyMMdd_HHmmss}.{GetFileExtension(guideExportRequest.Format)}";
+                await DownloadFile(data, filename, GetMimeType(guideExportRequest.Format));
+                
+                AddToHistory("Guide Messages", guideExportRequest.Format, guideExportRequest.FromDate, guideExportRequest.ToDate);
+                successMessage = "Guide messages exported successfully!";
+            }
+            else
+            {
+                errorMessage = "Failed to export guide messages. Please try again.";
+            }
+        });
+    }
+
+    private async Task ExportMessages()
+    {
+        await PerformExport("messages", async () =>
+        {
+            var data = await ApiService.ExportMessagesAsync(messageExportRequest);
+            if (data != null)
+            {
+                var filename = $"messages_export_{DateTime.Now:yyyyMMdd_HHmmss}.{GetFileExtension(messageExportRequest.Format)}";
+                await DownloadFile(data, filename, GetMimeType(messageExportRequest.Format));
+                
+                AddToHistory("Messages", messageExportRequest.Format, messageExportRequest.FromDate, messageExportRequest.ToDate);
+                successMessage = "Messages exported successfully!";
+            }
+            else
+            {
+                errorMessage = "Failed to export messages. Please try again.";
+            }
+        });
+    }
+
+    private async Task ExportAutomatedResponses()
+    {
+        await PerformExport("responses", async () =>
+        {
+            var data = await ApiService.ExportAutomatedResponsesAsync(responseExportRequest);
+            if (data != null)
+            {
+                var filename = $"automated_responses_{DateTime.Now:yyyyMMdd_HHmmss}.{GetFileExtension(responseExportRequest.Format)}";
+                await DownloadFile(data, filename, GetMimeType(responseExportRequest.Format));
+                
+                AddToHistory("Automated Responses", responseExportRequest.Format, responseExportRequest.FromDate, responseExportRequest.ToDate);
+                successMessage = "Automated responses exported successfully!";
+            }
+            else
+            {
+                errorMessage = "Failed to export automated responses. Please try again.";
+            }
+        });
+    }
+
+    private async Task PerformExport(string exportType, Func<Task> exportAction)
+    {
+        try
+        {
+            isExporting = true;
+            currentExport = exportType;
+            ClearMessages();
+            
+            await exportAction();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during {ExportType} export", exportType);
+            errorMessage = $"An error occurred during export: {ex.Message}";
+        }
+        finally
+        {
+            isExporting = false;
+            currentExport = "";
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task DownloadFile(byte[] data, string filename, string mimeType)
+    {
+        var base64 = Convert.ToBase64String(data);
+        await JSRuntime.InvokeVoidAsync("downloadFile", base64, filename, mimeType);
+    }
+
+    private string GetFileExtension(string format)
+    {
+        return format.ToLower() switch
+        {
+            "csv" => "csv",
+            "json" => "json",
+            "txt" => "txt",
+            "guide-messages" => "txt",
+            _ => "txt"
+        };
+    }
+
+    private string GetMimeType(string format)
+    {
+        return format.ToLower() switch
+        {
+            "csv" => "text/csv",
+            "json" => "application/json",
+            "txt" => "text/plain",
+            "guide-messages" => "text/plain",
+            _ => "text/plain"
+        };
+    }
+
+    private void AddToHistory(string type, string format, DateTime? fromDate, DateTime? toDate)
+    {
+        var dateRange = "";
+        if (fromDate.HasValue && toDate.HasValue)
+        {
+            dateRange = $"{fromDate.Value:MMM dd} - {toDate.Value:MMM dd}";
+        }
+        else if (fromDate.HasValue)
+        {
+            dateRange = $"From {fromDate.Value:MMM dd}";
+        }
+        else if (toDate.HasValue)
+        {
+            dateRange = $"Until {toDate.Value:MMM dd}";
+        }
+        else
+        {
+            dateRange = "All time";
+        }
+
+        exportHistory.Insert(0, new ExportHistoryItem
+        {
+            Type = type,
+            Format = format,
+            DateRange = dateRange,
+            ExportedAt = DateTime.Now
+        });
+
+        // Keep only last 20 items
+        if (exportHistory.Count > 20)
+        {
+            exportHistory = exportHistory.Take(20).ToList();
+        }
+    }
+
+    private void ClearMessages()
+    {
+        errorMessage = "";
+        successMessage = "";
+    }
+
+    private void ClearError()
+    {
+        errorMessage = "";
+    }
+
+    private void ClearSuccess()
+    {
+        successMessage = "";
+    }
+
+    public class ExportHistoryItem
+    {
+        public string Type { get; set; } = "";
+        public string Format { get; set; } = "";
+        public string DateRange { get; set; } = "";
+        public DateTime ExportedAt { get; set; }
+    }
+}
+
+<script>
+    window.downloadFile = (base64, filename, mimeType) => {
+        const byteCharacters = atob(base64);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: mimeType });
+        
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    };
+</script> 

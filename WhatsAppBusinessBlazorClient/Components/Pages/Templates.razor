@@ -1,0 +1,416 @@
+@page "/templates"
+@rendermode InteractiveServer
+@using WhatsAppBusinessBlazorClient.Models
+@using WhatsAppBusinessBlazorClient.Services
+@inject ApiService ApiService
+@inject ILogger<Templates> Logger
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Message Templates</PageTitle>
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-3">
+                <i class="bi bi-file-text me-2"></i>
+                Message Templates
+            </h1>
+            <p class="text-muted">Manage automated response templates for your WhatsApp Business messages.</p>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            @errorMessage
+            <button type="button" class="btn-close" @onclick="ClearError"></button>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            @successMessage
+            <button type="button" class="btn-close" @onclick="ClearSuccess"></button>
+        </div>
+    }
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-list-ul me-2"></i>
+                        Templates (@templates.Count)
+                    </h5>
+                    <button class="btn btn-primary" @onclick="ShowCreateTemplate">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        New Template
+                    </button>
+                </div>
+                <div class="card-body">
+                    @if (isLoading)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading templates...</span>
+                            </div>
+                            <p class="mt-2 text-muted">Loading templates...</p>
+                        </div>
+                    }
+                    else if (!templates.Any())
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-file-text text-muted" style="font-size: 3rem;"></i>
+                            <h5 class="mt-3 text-muted">No Templates Found</h5>
+                            <p class="text-muted">Create your first message template to get started.</p>
+                            <button class="btn btn-primary" @onclick="ShowCreateTemplate">
+                                <i class="bi bi-plus-circle me-1"></i>
+                                Create Template
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Category</th>
+                                        <th>Status</th>
+                                        <th>Default</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var template in templates.OrderBy(t => t.Category).ThenBy(t => t.Name))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@template.Name</strong>
+                                                @if (!string.IsNullOrEmpty(template.Description))
+                                                {
+                                                    <br />
+                                                    <small class="text-muted">@template.Description</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">@template.Category</span>
+                                            </td>
+                                            <td>
+                                                @if (template.IsActive)
+                                                {
+                                                    <span class="badge bg-success">Active</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Inactive</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (template.IsDefault)
+                                                {
+                                                    <i class="bi bi-star-fill text-warning" title="Default template"></i>
+                                                }
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">@template.CreatedAt.ToString("MMM dd, yyyy")</small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button class="btn btn-outline-primary" @onclick="() => ViewTemplate(template)" title="View">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-secondary" @onclick="() => EditTemplate(template)" title="Edit">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </button>
+                                                    <button class="btn btn-outline-danger" @onclick="() => DeleteTemplate(template)" title="Delete">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template Modal -->
+<div class="modal fade" id="templateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    @if (editingTemplate?.Id == 0)
+                    {
+                        <text><i class="bi bi-plus-circle me-2"></i>Create New Template</text>
+                    }
+                    else if (isViewMode)
+                    {
+                        <text><i class="bi bi-eye me-2"></i>View Template</text>
+                    }
+                    else
+                    {
+                        <text><i class="bi bi-pencil me-2"></i>Edit Template</text>
+                    }
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                @if (editingTemplate != null)
+                {
+                    <form>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label class="form-label">Template Name *</label>
+                                    <input type="text" class="form-control" @bind="editingTemplate.Name" disabled="@isViewMode" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label">Category *</label>
+                                    <select class="form-select" @bind="editingTemplate.Category" disabled="@isViewMode">
+                                        <option value="">Select Category</option>
+                                        <option value="TourConfirmation">Tour Confirmation</option>
+                                        <option value="General">General</option>
+                                        <option value="BookingConfirmation">Booking Confirmation</option>
+                                        <option value="NoMatch">No Match</option>
+                                        <option value="Custom">Custom</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <input type="text" class="form-control" @bind="editingTemplate.Description" disabled="@isViewMode" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Template Text *</label>
+                            <textarea class="form-control" rows="10" @bind="editingTemplate.TemplateText" disabled="@isViewMode" 
+                                      placeholder="Enter your template text here. Use {variable_name} for placeholders."></textarea>
+                            <div class="form-text">
+                                Use placeholders like {company_name}, {guide_name}, {meeting_location}, etc.
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" @bind="editingTemplate.IsActive" disabled="@isViewMode" />
+                                    <label class="form-check-label">Active</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" @bind="editingTemplate.IsDefault" disabled="@isViewMode" />
+                                    <label class="form-check-label">Default for Category</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(editingTemplate.TemplateText))
+                        {
+                            <div class="mt-4">
+                                <h6>Preview:</h6>
+                                <div class="border rounded p-3 bg-light">
+                                    <pre class="mb-0" style="white-space: pre-wrap;">@GetTemplatePreview(editingTemplate.TemplateText)</pre>
+                                </div>
+                            </div>
+                        }
+                    </form>
+                }
+            </div>
+            <div class="modal-footer">
+                @if (!isViewMode)
+                {
+                    <button type="button" class="btn btn-primary" @onclick="SaveTemplate" disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                        }
+                        <i class="bi bi-check-lg me-1"></i>
+                        Save Template
+                    </button>
+                }
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    @(isViewMode ? "Close" : "Cancel")
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<MessageTemplate> templates = new();
+    private MessageTemplate? editingTemplate;
+    private bool isLoading = true;
+    private bool isSaving = false;
+    private bool isViewMode = false;
+    private string errorMessage = "";
+    private string successMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTemplates();
+    }
+
+    private async Task LoadTemplates()
+    {
+        try
+        {
+            isLoading = true;
+            templates = await ApiService.GetMessageTemplatesAsync();
+            Logger.LogInformation("Loaded {Count} templates", templates.Count);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading templates");
+            errorMessage = "Failed to load templates. Please try again.";
+        }
+        finally
+        {
+            isLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ShowCreateTemplate()
+    {
+        editingTemplate = new MessageTemplate
+        {
+            IsActive = true,
+            Category = "General"
+        };
+        isViewMode = false;
+        await JSRuntime.InvokeVoidAsync("bootstrap.Modal.getOrCreateInstance", "#templateModal").AsTask();
+        await JSRuntime.InvokeVoidAsync("eval", "new bootstrap.Modal(document.getElementById('templateModal')).show()");
+    }
+
+    private async Task ViewTemplate(MessageTemplate template)
+    {
+        editingTemplate = template;
+        isViewMode = true;
+        await JSRuntime.InvokeVoidAsync("eval", "new bootstrap.Modal(document.getElementById('templateModal')).show()");
+    }
+
+    private async Task EditTemplate(MessageTemplate template)
+    {
+        editingTemplate = new MessageTemplate
+        {
+            Id = template.Id,
+            Name = template.Name,
+            Description = template.Description,
+            TemplateText = template.TemplateText,
+            Category = template.Category,
+            IsActive = template.IsActive,
+            IsDefault = template.IsDefault,
+            PlaceholderVariables = template.PlaceholderVariables
+        };
+        isViewMode = false;
+        await JSRuntime.InvokeVoidAsync("eval", "new bootstrap.Modal(document.getElementById('templateModal')).show()");
+    }
+
+    private async Task SaveTemplate()
+    {
+        if (editingTemplate == null) return;
+
+        try
+        {
+            isSaving = true;
+            
+            if (string.IsNullOrWhiteSpace(editingTemplate.Name) || 
+                string.IsNullOrWhiteSpace(editingTemplate.Category) || 
+                string.IsNullOrWhiteSpace(editingTemplate.TemplateText))
+            {
+                errorMessage = "Please fill in all required fields.";
+                return;
+            }
+
+            var success = await ApiService.SaveMessageTemplateAsync(editingTemplate);
+            
+            if (success)
+            {
+                successMessage = editingTemplate.Id == 0 ? "Template created successfully!" : "Template updated successfully!";
+                await JSRuntime.InvokeVoidAsync("eval", "bootstrap.Modal.getInstance(document.getElementById('templateModal')).hide()");
+                await LoadTemplates();
+            }
+            else
+            {
+                errorMessage = "Failed to save template. Please try again.";
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error saving template");
+            errorMessage = "An error occurred while saving the template.";
+        }
+        finally
+        {
+            isSaving = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task DeleteTemplate(MessageTemplate template)
+    {
+        if (await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete the template '{template.Name}'?"))
+        {
+            try
+            {
+                var success = await ApiService.DeleteMessageTemplateAsync(template.Id);
+                
+                if (success)
+                {
+                    successMessage = "Template deleted successfully!";
+                    await LoadTemplates();
+                }
+                else
+                {
+                    errorMessage = "Failed to delete template. Please try again.";
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error deleting template");
+                errorMessage = "An error occurred while deleting the template.";
+            }
+        }
+    }
+
+    private string GetTemplatePreview(string templateText)
+    {
+        return templateText
+            .Replace("{company_name}", "NYC Adventure Tours")
+            .Replace("{guide_name}", "John Smith")
+            .Replace("{meeting_location}", "Central Park Entrance")
+            .Replace("{tour_time}", "9:00 AM")
+            .Replace("{identifiable_object}", "a red umbrella")
+            .Replace("{guide_phone}", "+1-555-0123")
+            .Replace("{tour_description}", "Explore the highlights of Central Park with our experienced guide")
+            .Replace("{tour_type}", "Walking Tour")
+            .Replace("{tour_date}", "tomorrow");
+    }
+
+    private void ClearError()
+    {
+        errorMessage = "";
+    }
+
+    private void ClearSuccess()
+    {
+        successMessage = "";
+    }
+} 

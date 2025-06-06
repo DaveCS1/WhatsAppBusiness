@@ -26,7 +26,7 @@ namespace WhatsAppBusinessAPI.Services
                 logger.LogInformation("Database connection opened successfully.");
 
                 // Verify that the required tables exist
-                var requiredTables = new[] { "Contacts", "Messages", "TourDetails", "AutomatedResponseLog" };
+                var requiredTables = new[] { "Contacts", "Messages", "TourDetails", "AutomatedResponseLog", "MessageTemplates", "SystemSettings" };
                 var existingTables = await connection.QueryAsync<string>(
                     "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
                 
@@ -46,8 +46,10 @@ namespace WhatsAppBusinessAPI.Services
                 var contactCount = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM Contacts");
                 var messageCount = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM Messages");
                 var tourCount = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM TourDetails");
+                var templateCount = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM MessageTemplates");
+                var responseLogCount = await connection.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM AutomatedResponseLog");
                 
-                logger.LogInformation($"Database stats - Contacts: {contactCount}, Messages: {messageCount}, Tours: {tourCount}");
+                logger.LogInformation($"Database stats - Contacts: {contactCount}, Messages: {messageCount}, Tours: {tourCount}, Templates: {templateCount}, Response Logs: {responseLogCount}");
             }
             catch (Exception ex)
             {

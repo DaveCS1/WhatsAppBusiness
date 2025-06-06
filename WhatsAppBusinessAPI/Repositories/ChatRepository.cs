@@ -205,6 +205,330 @@ namespace WhatsAppBusinessAPI.Repositories
                 "SELECT * FROM TourDetails WHERE IsActive = 1 ORDER BY TourType, Date, TimeSlot");
         }
 
+        // Message Templates methods
+        public async Task<IEnumerable<MessageTemplate>> GetMessageTemplatesAsync()
+        {
+            using var connection = await GetOpenConnectionAsync();
+            return await connection.QueryAsync<MessageTemplate>(
+                "SELECT * FROM MessageTemplates ORDER BY Category, Name");
+        }
+
+        public async Task<MessageTemplate?> GetMessageTemplateByIdAsync(int id)
+        {
+            using var connection = await GetOpenConnectionAsync();
+            return await connection.QueryFirstOrDefaultAsync<MessageTemplate>(
+                "SELECT * FROM MessageTemplates WHERE Id = @Id", new { Id = id });
+        }
+
+        public async Task<MessageTemplate?> GetDefaultTemplateByCategory(string category)
+        {
+            using var connection = await GetOpenConnectionAsync();
+            return await connection.QueryFirstOrDefaultAsync<MessageTemplate>(
+                "SELECT * FROM MessageTemplates WHERE Category = @Category AND IsDefault = 1 AND IsActive = 1", 
+                new { Category = category });
+        }
+
+        public async Task<int> SaveMessageTemplateAsync(MessageTemplate template)
+        {
+            using var connection = await GetOpenConnectionAsync();
+            
+            if (template.Id == 0)
+            {
+                // Insert new template
+                var sql = @"
+                    INSERT INTO MessageTemplates (Name, Description, TemplateText, Category, IsActive, IsDefault, PlaceholderVariables)
+                    VALUES (@Name, @Description, @TemplateText, @Category, @IsActive, @IsDefault, @PlaceholderVariables);
+                    SELECT last_insert_rowid();";
+                return await connection.QuerySingleAsync<int>(sql, template);
+            }
+            else
+            {
+                // Update existing template
+                var sql = @"
+                    UPDATE MessageTemplates 
+                    SET Name = @Name, Description = @Description, TemplateText = @TemplateText, 
+                        Category = @Category, IsActive = @IsActive, IsDefault = @IsDefault, 
+                        PlaceholderVariables = @PlaceholderVariables, UpdatedAt = CURRENT_TIMESTAMP
+                    WHERE Id = @Id";
+                await connection.ExecuteAsync(sql, template);
+                return template.Id;
+            }
+        }
+
+        public async Task DeleteMessageTemplateAsync(int id)
+        {
+            using var connection = await GetOpenConnectionAsync();
+            await connection.ExecuteAsync("DELETE FROM MessageTemplates WHERE Id = @Id", new { Id = id });
+        }
+
+        // Export methods
+        public async Task<IEnumerable<TourExportData>> GetTourExportDataAsync(DateTime? fromDate = null, DateTime? toDate = null, string? tourTypeFilter = null)
+        {
+            using var connection = await GetOpenConnectionAsync();
+            
+            // Get all tours that have had bookings (from AutomatedResponseLog)
+            var sql = @"
+                SELECT DISTINCT 
+                    COALESCE(arl.TourLocationUsed, td.MeetingLocation) as MeetingLocation,
+                    COALESCE(arl.GuideNameUsed, td.GuideName) as GuideName,
+                    COALESCE(arl.GuideNumberUsed, td.GuidePhoneNumber) as GuidePhoneNumber,
+                    COALESCE(arl.TourTimeUsed, td.TimeSlot) as TimeSlot,
+                    COALESCE(arl.IdentifiableObjectUsed, td.IdentifiableObject) as IdentifiableObject,
+                    CASE 
+                        WHEN arl.TourLocationUsed IS NOT NULL THEN 
+                            CASE 
+                                WHEN arl.TourLocationUsed LIKE '%Central Park%' OR arl.GuideNameUsed LIKE '%Alice%' OR arl.GuideNameUsed LIKE '%Bob%' THEN 'Walking Tour'
+                                WHEN arl.TourLocationUsed LIKE '%Greenwich%' OR arl.TourLocationUsed LIKE '%Little Italy%' OR arl.GuideNameUsed LIKE '%Maria%' OR arl.GuideNameUsed LIKE '%David%' THEN 'Food Tour'
+                                WHEN arl.TourLocationUsed LIKE '%Brooklyn%' OR arl.GuideNameUsed LIKE '%Sarah%' THEN 'Historical Tour'
+                                WHEN arl.TourLocationUsed LIKE '%Museum%' OR arl.GuideNameUsed LIKE '%Michael%' THEN 'Art Tour'
+                                ELSE 'General Tour'
+                            END
+                        ELSE td.TourType 
+                    END as TourType,
+                    CASE 
+                        WHEN arl.RequestReceivedTime IS NOT NULL THEN DATE(arl.RequestReceivedTime)
+                        ELSE td.Date 
+                    END as Date
+                FROM AutomatedResponseLog arl
+                LEFT JOIN TourDetails td ON (
+                    td.GuideName = arl.GuideNameUsed OR 
+                    td.MeetingLocation = arl.TourLocationUsed OR
+                    td.TourType LIKE '%' || CASE 
+                        WHEN arl.TourLocationUsed LIKE '%Central Park%' THEN 'Walking'
+                        WHEN arl.TourLocationUsed LIKE '%Greenwich%' THEN 'Food'
+                        WHEN arl.TourLocationUsed LIKE '%Brooklyn%' THEN 'Historical'
+                        WHEN arl.TourLocationUsed LIKE '%Museum%' THEN 'Art'
+                        ELSE 'Tour'
+                    END || '%'
+                )
+                WHERE arl.Status = 'Sent' AND arl.TourLocationUsed IS NOT NULL";
+
+            var parameters = new DynamicParameters();
+            
+            if (fromDate.HasValue)
+            {
+                sql += " AND arl.RequestReceivedTime >= @FromDate";
+                parameters.Add("FromDate", fromDate.Value);
+            }
+            
+            if (toDate.HasValue)
+            {
+                sql += " AND arl.RequestReceivedTime <= @ToDate";
+                parameters.Add("ToDate", toDate.Value);
+            }
+            
+            if (!string.IsNullOrEmpty(tourTypeFilter))
+            {
+                sql += " AND (td.TourType = @TourType OR arl.TourLocationUsed LIKE '%' || @TourType || '%')";
+                parameters.Add("TourType", tourTypeFilter);
+            }
+
+            sql += " ORDER BY Date, TimeSlot, TourType";
+
+            var tourData = await connection.QueryAsync<TourExportData>(sql, parameters);
+            
+            // Get participants for each tour
+            foreach (var tour in tourData)
+            {
+                tour.Participants = (await GetTourParticipantsAsync(tour.TourType, tour.Date, tour.TimeSlot, fromDate, toDate)).ToList();
+            }
+
+            return tourData;
+        }
+
+        public async Task<IEnumerable<TourParticipant>> GetTourParticipantsAsync(string tourType, string date, string timeSlot, DateTime? fromDate = null, DateTime? toDate = null)
+        {
+            using var connection = await GetOpenConnectionAsync();
+            
+            var sql = @"
+                SELECT 
+                    COALESCE(c.ExtractedUserName, c.DisplayName, 'Guest') as Name,
+                    c.WaId as PhoneNumber,
+                    c.WaId as WhatsAppId,
+                    arl.RequestReceivedTime as BookingTime,
+                    arl.AiExtractedData as SpecialRequests,
+                    1 as NumberOfPeople
+                FROM AutomatedResponseLog arl
+                INNER JOIN Contacts c ON c.WaId = arl.ContactWaId
+                WHERE arl.Status = 'Sent' 
+                AND arl.TourLocationUsed IS NOT NULL
+                AND (
+                    -- Match by tour type
+                    (@TourType LIKE '%Walking%' AND (arl.TourLocationUsed LIKE '%Central Park%' OR arl.GuideNameUsed LIKE '%Alice%' OR arl.GuideNameUsed LIKE '%Bob%')) OR
+                    (@TourType LIKE '%Food%' AND (arl.TourLocationUsed LIKE '%Greenwich%' OR arl.TourLocationUsed LIKE '%Little Italy%' OR arl.GuideNameUsed LIKE '%Maria%' OR arl.GuideNameUsed LIKE '%David%')) OR
+                    (@TourType LIKE '%Historical%' AND (arl.TourLocationUsed LIKE '%Brooklyn%' OR arl.GuideNameUsed LIKE '%Sarah%')) OR
+                    (@TourType LIKE '%Art%' AND (arl.TourLocationUsed LIKE '%Museum%' OR arl.GuideNameUsed LIKE '%Michael%')) OR
+                    -- Fallback: match by any part of the tour type
+                    (arl.TourLocationUsed LIKE '%' || @TourType || '%' OR arl.GuideNameUsed LIKE '%' || @TourType || '%')
+                )";
+
+            var parameters = new DynamicParameters();
+            parameters.Add("TourType", tourType);
+            
+            if (fromDate.HasValue)
+            {
+                sql += " AND arl.RequestReceivedTime >= @FromDate";
+                parameters.Add("FromDate", fromDate.Value);
+            }
+            
+            if (toDate.HasValue)
+            {
+                sql += " AND arl.RequestReceivedTime <= @ToDate";
+                parameters.Add("ToDate", toDate.Value);
+            }
+
+            // Also filter by date if provided
+            if (!string.IsNullOrEmpty(date) && date != "tomorrow" && date != "today")
+            {
+                sql += " AND DATE(arl.RequestReceivedTime) = @Date";
+                parameters.Add("Date", date);
+            }
+
+            // Also filter by time slot if provided
+            if (!string.IsNullOrEmpty(timeSlot))
+            {
+                sql += " AND arl.TourTimeUsed LIKE '%' || @TimeSlot || '%'";
+                parameters.Add("TimeSlot", timeSlot);
+            }
+
+            sql += " ORDER BY arl.RequestReceivedTime DESC";
+
+            return await connection.QueryAsync<TourParticipant>(sql, parameters);
+        }
+
+        public async Task<IEnumerable<ContactExportData>> GetContactExportDataAsync(DateTime? fromDate = null, DateTime? toDate = null)
+        {
+            using var connection = await GetOpenConnectionAsync();
+            
+            var sql = @"
+                SELECT 
+                    COALESCE(c.ExtractedUserName, c.DisplayName, 'Unknown') as Name,
+                    c.WaId as PhoneNumber,
+                    c.WaId as WhatsAppId,
+                    c.LastMessageTimestamp as LastContact,
+                    COALESCE(c.LastExtractedTourType, 'Unknown') as LastTourType,
+                    COALESCE(c.LastExtractedTourDate, 'Unknown') as LastTourDate,
+                    COALESCE(c.LastExtractedTourTime, 'Unknown') as LastTourTime,
+                    (SELECT COUNT(*) FROM Messages m WHERE m.ContactId = c.Id) as TotalMessages,
+                    CASE 
+                        WHEN EXISTS(SELECT 1 FROM AutomatedResponseLog arl WHERE arl.ContactWaId = c.WaId AND arl.Status = 'Sent') 
+                        THEN 'Contacted' 
+                        ELSE 'New' 
+                    END as Status
+                FROM Contacts c
+                WHERE 1=1";
+
+            var parameters = new DynamicParameters();
+            
+            if (fromDate.HasValue)
+            {
+                sql += " AND c.LastMessageTimestamp >= @FromDate";
+                parameters.Add("FromDate", fromDate.Value);
+            }
+            
+            if (toDate.HasValue)
+            {
+                sql += " AND c.LastMessageTimestamp <= @ToDate";
+                parameters.Add("ToDate", toDate.Value);
+            }
+
+            sql += " ORDER BY c.LastMessageTimestamp DESC";
+
+            return await connection.QueryAsync<ContactExportData>(sql, parameters);
+        }
+
+        public async Task<IEnumerable<MessageExportData>> GetMessageExportDataAsync(DateTime? fromDate = null, DateTime? toDate = null, string? contactFilter = null)
+        {
+            using var connection = await GetOpenConnectionAsync();
+            
+            var sql = @"
+                SELECT 
+                    m.Id as MessageId,
+                    m.WaMessageId,
+                    c.WaId as ContactWaId,
+                    COALESCE(c.ExtractedUserName, c.DisplayName, 'Unknown') as ContactName,
+                    m.Body as MessageText,
+                    m.IsFromMe,
+                    m.Timestamp as MessageTimestamp,
+                    m.Status as MessageStatus,
+                    m.MessageType,
+                    CASE WHEN m.IsFromMe = 1 THEN 'Outgoing' ELSE 'Incoming' END as Direction
+                FROM Messages m
+                INNER JOIN Contacts c ON c.Id = m.ContactId
+                WHERE 1=1";
+
+            var parameters = new DynamicParameters();
+            
+            if (fromDate.HasValue)
+            {
+                sql += " AND m.Timestamp >= @FromDate";
+                parameters.Add("FromDate", fromDate.Value);
+            }
+            
+            if (toDate.HasValue)
+            {
+                sql += " AND m.Timestamp <= @ToDate";
+                parameters.Add("ToDate", toDate.Value);
+            }
+            
+            if (!string.IsNullOrEmpty(contactFilter))
+            {
+                sql += " AND (c.WaId LIKE '%' || @ContactFilter || '%' OR c.DisplayName LIKE '%' || @ContactFilter || '%' OR c.ExtractedUserName LIKE '%' || @ContactFilter || '%')";
+                parameters.Add("ContactFilter", contactFilter);
+            }
+
+            sql += " ORDER BY m.Timestamp DESC";
+
+            return await connection.QueryAsync<MessageExportData>(sql, parameters);
+        }
+
+        public async Task<IEnumerable<AutomatedResponseExportData>> GetAutomatedResponseExportDataAsync(DateTime? fromDate = null, DateTime? toDate = null)
+        {
+            using var connection = await GetOpenConnectionAsync();
+            
+            var sql = @"
+                SELECT 
+                    arl.Id as LogId,
+                    arl.ContactWaId,
+                    COALESCE(c.ExtractedUserName, c.DisplayName, 'Unknown') as ContactName,
+                    arl.RequestReceivedTime,
+                    arl.ResponseSentTime,
+                    arl.ProcessingDurationMs,
+                    arl.AiApiCallDurationMs,
+                    arl.TemplateUsed,
+                    arl.CompanyNameUsed,
+                    arl.GuideNameUsed,
+                    arl.TourLocationUsed,
+                    arl.TourTimeUsed,
+                    arl.IdentifiableObjectUsed,
+                    arl.GuideNumberUsed,
+                    arl.FullResponseText,
+                    arl.Status,
+                    arl.ErrorMessage,
+                    arl.AiExtractedData
+                FROM AutomatedResponseLog arl
+                LEFT JOIN Contacts c ON c.WaId = arl.ContactWaId
+                WHERE 1=1";
+
+            var parameters = new DynamicParameters();
+            
+            if (fromDate.HasValue)
+            {
+                sql += " AND arl.RequestReceivedTime >= @FromDate";
+                parameters.Add("FromDate", fromDate.Value);
+            }
+            
+            if (toDate.HasValue)
+            {
+                sql += " AND arl.RequestReceivedTime <= @ToDate";
+                parameters.Add("ToDate", toDate.Value);
+            }
+
+            sql += " ORDER BY arl.RequestReceivedTime DESC";
+
+            return await connection.QueryAsync<AutomatedResponseExportData>(sql, parameters);
+        }
+
         public async Task<Dictionary<string, object>> GetSystemStatsAsync()
         {
             using var connection = await GetOpenConnectionAsync();
