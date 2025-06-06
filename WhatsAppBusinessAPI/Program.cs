@@ -20,8 +20,10 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowBlazorClient",
         policy => policy
             .WithOrigins(
-                "https://localhost:7001", // Your Blazor dev server (HTTPS)
-                "http://localhost:5000",  // Your Blazor dev server (HTTP, if applicable)
+                "https://localhost:7237", // Blazor HTTPS port from launchSettings.json
+                "http://localhost:5221",  // Blazor HTTP port from launchSettings.json
+                "https://localhost:7001", // Alternative HTTPS port
+                "http://localhost:5000",  // Alternative HTTP port
                 "https://localhost:5001"  // Alternative HTTPS port
                 // Add your deployed Blazor client URL here for production
                 // e.g., "https://your-blazor-app.azurewebsites.net"
