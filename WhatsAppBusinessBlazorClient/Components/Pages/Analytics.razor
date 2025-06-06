@@ -33,7 +33,7 @@
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
             <strong>Error:</strong> @errorMessage
             <button type="button" class="btn-close" @onclick="ClearError"></button>
-        </div>
+                </div>
     }
 
     <!-- Loading State -->
@@ -50,37 +50,37 @@
     <!-- Statistics Cards - Only show when data is loaded -->
     @if (dataLoaded && !isLoading)
     {
-        <div class="row mb-4">
-            <div class="col-md-2">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title text-primary">@totalContacts</h5>
-                        <p class="card-text">Total Contacts</p>
-                    </div>
+    <div class="row mb-4">
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">@totalContacts</h5>
+                    <p class="card-text">Total Contacts</p>
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title text-info">@totalMessages</h5>
-                        <p class="card-text">Total Messages</p>
-                    </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-info">@totalMessages</h5>
+                    <p class="card-text">Total Messages</p>
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title text-success">@automatedResponsesToday</h5>
-                        <p class="card-text">Automated Today</p>
-                    </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-success">@automatedResponsesToday</h5>
+                    <p class="card-text">Automated Today</p>
                 </div>
             </div>
-            <div class="col-md-2">
-                <div class="card text-center">
-                    <div class="card-body">
-                        <h5 class="card-title text-warning">@successRate.ToString("F1")%</h5>
-                        <p class="card-text">Success Rate</p>
-                    </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-warning">@successRate.ToString("F1")%</h5>
+                    <p class="card-text">Success Rate</p>
+                </div>
                 </div>
             </div>
         </div>
@@ -89,60 +89,60 @@
     <!-- Recent Logs Table - Only show when data is loaded -->
     @if (dataLoaded && !isLoading)
     {
-        <div class="row">
-            <div class="col">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+    <div class="row">
+        <div class="col">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
                         <h5>Recent Automated Responses (@(logs?.Count ?? 0) records)</h5>
                         <small class="text-muted">Last updated: @lastUpdated.ToString("HH:mm:ss")</small>
-                    </div>
-                    <div class="card-body">
+                </div>
+                <div class="card-body">
                         @if (logs != null && logs.Any())
-                        {
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
-                                        <tr>
-                                            <th>Time</th>
-                                            <th>Contact</th>
-                                            <th>Status</th>
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Time</th>
+                                        <th>Contact</th>
+                                        <th>Status</th>
                                             <th>Processing Time</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
+                                    </tr>
+                                </thead>
+                                <tbody>
                                         @foreach (var log in logs.Take(10))
-                                        {
-                                            <tr>
-                                                <td>
-                                                    <small>@log.RequestReceivedTime.ToString("MM/dd HH:mm")</small>
-                                                </td>
-                                                <td>
-                                                    <strong>@log.ContactWaId</strong>
-                                                </td>
-                                                <td>
-                                                    <span class="badge @(log.Status == "Sent" ? "bg-success" : "bg-danger")">
-                                                        @log.Status
-                                                    </span>
-                                                </td>
-                                                <td>
+                                    {
+                                        <tr>
+                                            <td>
+                                                <small>@log.RequestReceivedTime.ToString("MM/dd HH:mm")</small>
+                                            </td>
+                                            <td>
+                                                <strong>@log.ContactWaId</strong>
+                                            </td>
+                                            <td>
+                                                <span class="badge @(log.Status == "Sent" ? "bg-success" : "bg-danger")">
+                                                    @log.Status
+                                                </span>
+                                            </td>
+                                            <td>
                                                     <small>@log.ProcessingDurationMs ms</small>
-                                                </td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                </table>
-                            </div>
-                        }
-                        else
-                        {
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
                             <div class="text-center text-muted">
                                 <p>No data available. Click "Load Data" to fetch from API.</p>
-                            </div>
-                        }
-                    </div>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
+    </div>
     }
 
     <!-- Initial State -->
@@ -152,9 +152,9 @@
             <i class="bi bi-bar-chart display-1 text-muted"></i>
             <h3 class="text-muted">Analytics Dashboard</h3>
             <p class="text-muted">Click "Load Data" to fetch analytics from the API</p>
-        </div>
-    }
-</div>
+                        </div>
+                    }
+                    </div>
 
 @code {
     private List<AutomatedResponseLog>? logs;

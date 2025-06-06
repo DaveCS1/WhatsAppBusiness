@@ -16,6 +16,7 @@
 <body>
     <Routes />
     <script src="_framework/blazor.web.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         window.downloadFile = (fileName, mimeType, base64Data) => {
             const byteCharacters = atob(base64Data);
@@ -74,6 +75,19 @@
                     console.log('🖱️ Button clicked:', e.target.textContent.trim());
                 }
             });
+        };
+
+        // Bootstrap Modal JavaScript functions
+        window.showModal = (modalId) => {
+            const modal = new bootstrap.Modal(document.getElementById(modalId));
+            modal.show();
+        };
+
+        window.hideModal = (modalId) => {
+            const modal = bootstrap.Modal.getInstance(document.getElementById(modalId));
+            if (modal) {
+                modal.hide();
+            }
         };
 
         // Configure Blazor reconnection options (Blazor is already started automatically)

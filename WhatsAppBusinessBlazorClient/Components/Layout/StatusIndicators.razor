@@ -1,0 +1,94 @@
+@inject ApiService ApiService
+@inject IJSRuntime JSRuntime
+
+<div class="status-indicators">
+    <span class="status-item me-3" title="@apiTooltip">
+        <span class="status-label">API Status:</span>
+        <span class="status-circle @(isApiOnline ? "status-online" : "status-offline")"></span>
+    </span>
+    <span class="status-item" title="@dbTooltip">
+        <span class="status-label">Database:</span>
+        <span class="status-circle @(isDatabaseOnline ? "status-online" : "status-offline")"></span>
+    </span>
+</div>
+
+<style>
+    .status-indicators {
+        display: flex;
+        align-items: center;
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    .status-item {
+        display: flex;
+        align-items: center;
+        cursor: help;
+    }
+
+    .status-label {
+        margin-right: 0.25rem;
+    }
+
+    .status-circle {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .status-online {
+        background-color: #28a745;
+        box-shadow: 0 0 4px rgba(40, 167, 69, 0.5);
+    }
+
+    .status-offline {
+        background-color: #dc3545;
+        box-shadow: 0 0 4px rgba(220, 53, 69, 0.5);
+    }
+</style>
+
+@code {
+    private bool isApiOnline = false;
+    private bool isDatabaseOnline = false;
+    private string apiTooltip = "API Status: Checking...";
+    private string dbTooltip = "Database Status: Checking...";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckStatuses();
+        
+        // Update statuses every 30 seconds
+        _ = Task.Run(async () =>
+        {
+            while (true)
+            {
+                await Task.Delay(30000);
+                await CheckStatuses();
+                await InvokeAsync(StateHasChanged);
+            }
+        });
+    }
+
+    private async Task CheckStatuses()
+    {
+        try
+        {
+            // Check API status
+            isApiOnline = await ApiService.TestApiConnectionAsync();
+            apiTooltip = isApiOnline ? "API Status: Online" : "API Status: Offline";
+
+            // For database status, we'll assume it's online if API is online
+            // You could add a separate database health check endpoint
+            isDatabaseOnline = isApiOnline;
+            dbTooltip = isDatabaseOnline ? "Database Status: Online" : "Database Status: Offline";
+        }
+        catch (Exception)
+        {
+            isApiOnline = false;
+            isDatabaseOnline = false;
+            apiTooltip = "API Status: Connection Error";
+            dbTooltip = "Database Status: Unknown";
+        }
+    }
+} 

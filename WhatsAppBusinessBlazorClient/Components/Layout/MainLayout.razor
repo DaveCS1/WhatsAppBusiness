@@ -6,8 +6,11 @@
     </div>
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        <div class="top-row px-4 d-flex justify-content-between align-items-center">
+            <StatusIndicators />
+            <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#aboutModal">
+                <i class="bi bi-info-circle me-1"></i> About
+            </button>
         </div>
 
         <article class="content px-4">
@@ -16,8 +19,242 @@
     </main>
 </div>
 
+<!-- About Modal -->
+<div class="modal fade" id="aboutModal" tabindex="-1" aria-labelledby="aboutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="aboutModalLabel">
+                    <i class="bi bi-whatsapp text-success me-2"></i>
+                    WhatsApp Business Admin
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+                <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-4">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-robot me-2"></i>AI-Powered WhatsApp Business Solution
+                                </h6>
+                                <p class="lead">Transform your tour business with intelligent, automated customer service that works 24/7 through WhatsApp.</p>
+                                <p>This comprehensive admin platform manages automated responses, customer interactions, and business analytics for tour booking companies using cutting-edge AI technology.</p>
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h6 class="text-success mb-3">
+                                    <i class="bi bi-stars me-2"></i>Key Features & Capabilities
+                                </h6>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="feature-item mb-3">
+                                            <i class="bi bi-chat-dots-fill text-primary me-2"></i>
+                                            <strong>Intelligent Message Processing:</strong> AI analyzes incoming WhatsApp messages to extract customer intent, tour preferences, dates, and contact information automatically.
+                                        </div>
+                                        <div class="feature-item mb-3">
+                                            <i class="bi bi-search text-info me-2"></i>
+                                            <strong>Smart Tour Matching:</strong> Advanced algorithms match customer requests to available tour options based on type, date, time, and availability.
+                                        </div>
+                                        <div class="feature-item mb-3">
+                                            <i class="bi bi-lightning-fill text-warning me-2"></i>
+                                            <strong>Instant Automated Responses:</strong> Generate personalized responses with tour details, guide information, meeting locations, and contact numbers within seconds.
+                                        </div>
+                                        <div class="feature-item mb-3">
+                                            <i class="bi bi-graph-up text-success me-2"></i>
+                                            <strong>Comprehensive Analytics:</strong> Track response times, success rates, customer interactions, and business performance with detailed dashboards.
+                                        </div>
+                                        <div class="feature-item mb-3">
+                                            <i class="bi bi-people-fill text-secondary me-2"></i>
+                                            <strong>Customer Management:</strong> Maintain detailed customer profiles with conversation history, preferences, and booking patterns.
+                                        </div>
+                                        <div class="feature-item mb-3">
+                                            <i class="bi bi-gear-wide-connected text-dark me-2"></i>
+                                            <strong>WhatsApp Business API:</strong> Seamless integration with Meta's WhatsApp Business Platform for reliable message delivery and status tracking.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <h6 class="text-info mb-3">
+                                    <i class="bi bi-diagram-3 me-2"></i>How The System Works
+                                </h6>
+                                <div class="workflow-steps">
+                                    <div class="step-item mb-3">
+                                        <span class="step-number">1</span>
+                                        <div class="step-content">
+                                            <strong>Message Reception:</strong> Customer sends WhatsApp message expressing interest in tours (e.g., "Hi, I'd like to book a food tour for tomorrow at 2 PM for 4 people")
+                                        </div>
+                                    </div>
+                                    <div class="step-item mb-3">
+                                        <span class="step-number">2</span>
+                                        <div class="step-content">
+                                            <strong>AI Analysis:</strong> Google Gemini AI processes the message and extracts structured data: customer name, tour type, preferred date/time, group size, and special requirements
+                                        </div>
+                                    </div>
+                                    <div class="step-item mb-3">
+                                        <span class="step-number">3</span>
+                                        <div class="step-content">
+                                            <strong>Tour Matching:</strong> System searches available tour database and finds the best matching options based on customer preferences and availability
+                                        </div>
+                                    </div>
+                                    <div class="step-item mb-3">
+                                        <span class="step-number">4</span>
+                                        <div class="step-content">
+                                            <strong>Response Generation:</strong> Automated response is crafted with tour details, guide information, meeting location, identifiable objects, and contact numbers
+                                        </div>
+                                    </div>
+                                    <div class="step-item mb-3">
+                                        <span class="step-number">5</span>
+                                        <div class="step-content">
+                                            <strong>Delivery & Logging:</strong> Response is sent via WhatsApp API and all interaction data is logged for analytics, follow-up, and continuous improvement
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <h6 class="text-warning mb-3">
+                                    <i class="bi bi-shield-check me-2"></i>Business Benefits
+                                </h6>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2"><i class="bi bi-clock text-primary me-2"></i><strong>24/7 Availability:</strong> Never miss a booking opportunity with round-the-clock automated responses</li>
+                                    <li class="mb-2"><i class="bi bi-speedometer2 text-success me-2"></i><strong>Instant Response Times:</strong> Customers receive immediate tour information, improving satisfaction and conversion rates</li>
+                                    <li class="mb-2"><i class="bi bi-person-check text-info me-2"></i><strong>Consistent Service:</strong> Every customer receives the same high-quality, detailed information regardless of time or staff availability</li>
+                                    <li class="mb-2"><i class="bi bi-graph-up-arrow text-warning me-2"></i><strong>Scalable Operations:</strong> Handle unlimited customer inquiries without increasing staff costs</li>
+                                    <li class="mb-2"><i class="bi bi-eye text-secondary me-2"></i><strong>Complete Visibility:</strong> Track all customer interactions and identify trends to optimize your tour offerings</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light h-100">
+                                <div class="card-body">
+                                    <h6 class="card-title text-center mb-3">
+                                        <i class="bi bi-info-circle me-2"></i>System Information
+                                    </h6>
+                                    
+                                    <div class="mb-3">
+                                        <h6 class="text-muted mb-2">Current Status</h6>
+                                        <StatusIndicators />
+                                    </div>
+                                    
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <h6 class="text-muted mb-2">Technical Specifications</h6>
+                                        <div class="small">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span><strong>Version:</strong></span>
+                                                <span>1.0.0</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span><strong>AI Engine:</strong></span>
+                                                <span>Google Gemini 2.0</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span><strong>Platform:</strong></span>
+                                                <span>Blazor Server</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span><strong>Database:</strong></span>
+                                                <span>SQLite</span>
+                                            </div>
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span><strong>API:</strong></span>
+                                                <span>WhatsApp Business</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <hr>
+                                    
+                                    <div class="mb-3">
+                                        <h6 class="text-muted mb-2">Quick Navigation</h6>
+                                        <div class="d-grid gap-2">
+                                            <a href="/chat" class="btn btn-sm btn-primary">
+                                                <i class="bi bi-chat-dots me-1"></i> Chat Management
+                                            </a>
+                                            <a href="/analytics" class="btn btn-sm btn-success">
+                                                <i class="bi bi-bar-chart-line me-1"></i> Analytics
+                                            </a>
+                                            <a href="/test" class="btn btn-sm btn-secondary">
+                                                <i class="bi bi-gear me-1"></i> API Testing
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+<style>
+    .feature-item {
+        padding: 0.5rem 0;
+        border-left: 3px solid transparent;
+        padding-left: 1rem;
+        transition: all 0.2s ease;
+    }
+    
+    .feature-item:hover {
+        border-left-color: #007bff;
+        background-color: rgba(0, 123, 255, 0.05);
+        border-radius: 0 0.25rem 0.25rem 0;
+    }
+    
+    .workflow-steps {
+        position: relative;
+    }
+    
+    .step-item {
+        display: flex;
+        align-items: flex-start;
+        position: relative;
+        padding-left: 3rem;
+    }
+    
+    .step-number {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 2rem;
+        height: 2rem;
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 0.875rem;
+    }
+    
+    .step-content {
+        flex: 1;
+        padding-top: 0.25rem;
+    }
+    
+    .step-item:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: 0.9375rem;
+        top: 2rem;
+        bottom: -1rem;
+        width: 2px;
+        background: linear-gradient(to bottom, #007bff, #e9ecef);
+    }
+</style>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div id="blazor-error-ui">
     An unhandled error has occurred.
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+
