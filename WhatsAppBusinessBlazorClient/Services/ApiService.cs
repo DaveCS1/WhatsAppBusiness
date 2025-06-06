@@ -184,6 +184,153 @@ namespace WhatsAppBusinessBlazorClient.Services
                 return false;
             }
         }
+
+        public async Task<bool> ResendMessageAsync(int logId, string? customMessage = null)
+        {
+            try
+            {
+                _logger.LogInformation("Resending message for log {LogId}", logId);
+                
+                var request = new
+                {
+                    LogId = logId,
+                    CustomMessage = customMessage
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                
+                var response = await _httpClient.PostAsync("api/chat/resend-message", content);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("Message resent successfully for log {LogId}", logId);
+                    return true;
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to resend message for log {LogId}. Status: {StatusCode}", logId, response.StatusCode);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error resending message for log {LogId}", logId);
+                return false;
+            }
+        }
+
+        public async Task<bool> ReviewLogAsync(int logId, string status, string notes, string reviewer)
+        {
+            try
+            {
+                _logger.LogInformation("Reviewing log {LogId}", logId);
+                
+                var request = new
+                {
+                    LogId = logId,
+                    Status = status,
+                    Notes = notes,
+                    Reviewer = reviewer,
+                    ReviewedAt = DateTime.UtcNow
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                
+                var response = await _httpClient.PostAsync("api/chat/review-log", content);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("Log {LogId} reviewed successfully", logId);
+                    return true;
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to review log {LogId}. Status: {StatusCode}", logId, response.StatusCode);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reviewing log {LogId}", logId);
+                return false;
+            }
+        }
+
+        public async Task<byte[]?> ExportLogDataAsync(int logId, string format, ExportOptions options)
+        {
+            try
+            {
+                _logger.LogInformation("Exporting data for log {LogId} in {Format} format", logId, format);
+                
+                var request = new
+                {
+                    LogId = logId,
+                    Format = format,
+                    Options = options
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                
+                var response = await _httpClient.PostAsync("api/chat/export-log", content);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var data = await response.Content.ReadAsByteArrayAsync();
+                    _logger.LogInformation("Data exported successfully for log {LogId}", logId);
+                    return data;
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to export data for log {LogId}. Status: {StatusCode}", logId, response.StatusCode);
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting data for log {LogId}", logId);
+                return null;
+            }
+        }
+
+        public async Task<bool> ContactCustomerAsync(string contactWaId, string method, string? message = null)
+        {
+            try
+            {
+                _logger.LogInformation("Contacting customer {ContactWaId} via {Method}", contactWaId, method);
+                
+                var request = new
+                {
+                    ContactWaId = contactWaId,
+                    Method = method,
+                    Message = message,
+                    InitiatedAt = DateTime.UtcNow
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                
+                var response = await _httpClient.PostAsync("api/chat/contact-customer", content);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("Customer contact initiated successfully for {ContactWaId}", contactWaId);
+                    return true;
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to contact customer {ContactWaId}. Status: {StatusCode}", contactWaId, response.StatusCode);
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error contacting customer {ContactWaId}", contactWaId);
+                return false;
+            }
+        }
     }
 
     public class SystemStats
@@ -195,5 +342,14 @@ namespace WhatsAppBusinessBlazorClient.Services
         public int AverageProcessingTimeMs { get; set; }
         public int AverageAiTimeMs { get; set; }
         public Dictionary<string, int> TourTypeDistribution { get; set; } = new();
+    }
+
+    public class ExportOptions
+    {
+        public bool IncludeResponseText { get; set; } = true;
+        public bool IncludeAiData { get; set; } = true;
+        public bool IncludePerformanceData { get; set; } = true;
+        public bool IncludeTourDetails { get; set; } = true;
+        public string ExportedBy { get; set; } = "Admin User";
     }
 } 

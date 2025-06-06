@@ -1,5 +1,7 @@
 @page "/analytics"
 @using WhatsAppBusinessBlazorClient.Models
+@using WhatsAppBusinessBlazorClient.Services
+@inject ApiService ApiService
 
 <PageTitle>WhatsApp Business Admin - Analytics</PageTitle>
 
@@ -184,9 +186,23 @@
                                                 </span>
                                             </td>
                                             <td>
-                                                <button class="btn btn-sm btn-outline-info" @onclick="() => ShowLogDetails(log)">
-                                                    <i class="bi bi-eye"></i>
-                                                </button>
+                                                <div class="btn-group" role="group">
+                                                    <button class="btn btn-sm btn-outline-info" @onclick="() => ShowLogDetails(log)" title="View Details">
+                                                        <i class="bi bi-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-success" @onclick="() => ShowResendDialog(log)" title="Resend Message">
+                                                        <i class="bi bi-arrow-repeat"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => ShowContactDialog(log)" title="Contact Customer">
+                                                        <i class="bi bi-telephone"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-warning" @onclick="() => ShowReviewDialog(log)" title="Mark as Reviewed">
+                                                        <i class="bi bi-check-square"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-secondary" @onclick="() => ShowExportDialog(log)" title="Export Data">
+                                                        <i class="bi bi-download"></i>
+                                                    </button>
+                                                </div>
                                             </td>
                                         </tr>
                                     }
@@ -272,6 +288,229 @@
     </div>
 }
 
+<!-- Resend Message Dialog -->
+@if (showResendDialog && selectedLogForAction != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Resend Message</h5>
+                    <button type="button" class="btn-close" @onclick="CloseActionDialogs"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Contact:</strong> @selectedLogForAction.ContactWaId</p>
+                    <p><strong>Original Message:</strong></p>
+                    <div class="bg-light p-2 rounded mb-3" style="max-height: 150px; overflow-y: auto;">
+                        <small>@selectedLogForAction.FullResponseText</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Modify message before resending (optional):</label>
+                        <textarea class="form-control" rows="4" @bind="resendMessageText" placeholder="Leave empty to resend original message"></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> This will send a new WhatsApp message to the customer.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseActionDialogs">Cancel</button>
+                    <button type="button" class="btn btn-success" @onclick="ConfirmResendMessage">
+                        <i class="bi bi-send"></i> Resend Message
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Contact Customer Dialog -->
+@if (showContactDialog && selectedLogForAction != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Contact Customer</h5>
+                    <button type="button" class="btn-close" @onclick="CloseActionDialogs"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Customer Information</h6>
+                            <p><strong>WhatsApp ID:</strong> @selectedLogForAction.ContactWaId</p>
+                            <p><strong>Last Contact:</strong> @selectedLogForAction.RequestReceivedTime.ToString("yyyy-MM-dd HH:mm")</p>
+                            <p><strong>Tour Guide:</strong> @selectedLogForAction.GuideNameUsed</p>
+                            <p><strong>Guide Phone:</strong> @selectedLogForAction.GuideNumberUsed</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Tour Details</h6>
+                            <p><strong>Tour Type:</strong> @selectedLogForAction.TemplateUsed</p>
+                            <p><strong>Location:</strong> @selectedLogForAction.TourLocationUsed</p>
+                            <p><strong>Time:</strong> @selectedLogForAction.TourTimeUsed</p>
+                            <p><strong>Status:</strong> <span class="badge @(selectedLogForAction.Status == "Sent" ? "bg-success" : "bg-danger")">@selectedLogForAction.Status</span></p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Contact Method:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="contactMethod" id="whatsapp" value="whatsapp" @onchange="OnContactMethodChanged" checked="@(contactMethod == "whatsapp")">
+                            <label class="form-check-label" for="whatsapp">
+                                <i class="bi bi-whatsapp text-success"></i> WhatsApp Message
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="contactMethod" id="phone" value="phone" @onchange="OnContactMethodChanged">
+                            <label class="form-check-label" for="phone">
+                                <i class="bi bi-telephone text-primary"></i> Phone Call
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="contactMethod" id="guide" value="guide" @onchange="OnContactMethodChanged">
+                            <label class="form-check-label" for="guide">
+                                <i class="bi bi-person text-warning"></i> Connect to Tour Guide
+                            </label>
+                        </div>
+                    </div>
+                    
+                    @if (contactMethod == "whatsapp")
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Message to send:</label>
+                            <textarea class="form-control" rows="3" @bind="contactMessageText" placeholder="Enter your message..."></textarea>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseActionDialogs">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="ConfirmContactCustomer">
+                        <i class="bi bi-telephone"></i> Contact Customer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Review Dialog -->
+@if (showReviewDialog && selectedLogForAction != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Mark as Reviewed</h5>
+                    <button type="button" class="btn-close" @onclick="CloseActionDialogs"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Contact:</strong> @selectedLogForAction.ContactWaId</p>
+                    <p><strong>Response Time:</strong> @selectedLogForAction.RequestReceivedTime.ToString("yyyy-MM-dd HH:mm:ss")</p>
+                    <p><strong>Current Status:</strong> <span class="badge @(selectedLogForAction.Status == "Sent" ? "bg-success" : "bg-danger")">@selectedLogForAction.Status</span></p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Review Status:</label>
+                        <select class="form-select" @bind="reviewStatus">
+                            <option value="approved">APPROVED - Response was appropriate</option>
+                            <option value="needs-improvement">NEEDS IMPROVEMENT - Minor issues</option>
+                            <option value="rejected">REJECTED - Response was inappropriate</option>
+                            <option value="follow-up-required">FOLLOW-UP REQUIRED - Manual contact needed</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Review Notes:</label>
+                        <textarea class="form-control" rows="3" @bind="reviewNotes" placeholder="Add any notes about this automated response..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Reviewer:</label>
+                        <input type="text" class="form-control" @bind="reviewerName" placeholder="Your name">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseActionDialogs">Cancel</button>
+                    <button type="button" class="btn btn-warning" @onclick="ConfirmReview">
+                        <i class="bi bi-check-square"></i> Save Review
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Export Data Dialog -->
+@if (showExportDialog && selectedLogForAction != null)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Export Response Data</h5>
+                    <button type="button" class="btn-close" @onclick="CloseActionDialogs"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Contact:</strong> @selectedLogForAction.ContactWaId</p>
+                    <p><strong>Response ID:</strong> #@selectedLogForAction.Id</p>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Export Format:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="exportFormat" id="json" value="json" @onchange="OnExportFormatChanged" checked="@(exportFormat == "json")">
+                            <label class="form-check-label" for="json">
+                                <i class="bi bi-filetype-json"></i> JSON Format
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="exportFormat" id="csv" value="csv" @onchange="OnExportFormatChanged">
+                            <label class="form-check-label" for="csv">
+                                <i class="bi bi-filetype-csv"></i> CSV Format
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="exportFormat" id="pdf" value="pdf" @onchange="OnExportFormatChanged">
+                            <label class="form-check-label" for="pdf">
+                                <i class="bi bi-filetype-pdf"></i> PDF Report
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Include Data:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeResponse" @bind="includeResponseText">
+                            <label class="form-check-label" for="includeResponse">Full Response Text</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeAiData" @bind="includeAiData">
+                            <label class="form-check-label" for="includeAiData">AI Extracted Data</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includePerformance" @bind="includePerformanceData">
+                            <label class="form-check-label" for="includePerformance">Performance Metrics</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="includeTourDetails" @bind="includeTourDetails">
+                            <label class="form-check-label" for="includeTourDetails">Tour Details</label>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Export will be generated and downloaded automatically.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseActionDialogs">Cancel</button>
+                    <button type="button" class="btn btn-success" @onclick="ConfirmExport">
+                        <i class="bi bi-download"></i> Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<AutomatedResponseLog>? logs;
     private AutomatedResponseLog? selectedLog;
@@ -282,6 +521,22 @@
     private int averageProcessingTime = 0;
     private int averageAiTime = 0;
     private Dictionary<string, int>? tourTypeStats;
+    private bool showResendDialog = false;
+    private bool showContactDialog = false;
+    private bool showReviewDialog = false;
+    private bool showExportDialog = false;
+    private AutomatedResponseLog? selectedLogForAction;
+    private string resendMessageText = "";
+    private string contactMessageText = "";
+    private string reviewStatus = "approved";
+    private string reviewNotes = "";
+    private string reviewerName = "Admin User";
+    private string contactMethod = "whatsapp";
+    private bool includeResponseText = true;
+    private bool includeAiData = true;
+    private bool includePerformanceData = true;
+    private bool includeTourDetails = true;
+    private string exportFormat = "json";
 
     protected override async Task OnInitializedAsync()
     {
@@ -337,9 +592,9 @@
                 TourTimeUsed = "2 PM",
                 IdentifiableObjectUsed = "a small sign with our company logo",
                 GuideNumberUsed = "(555) 123-4567",
-                FullResponseText = "Hello John! Thank you for booking your tour with NYC Adventure Tours.\n\nYour tour guide Maria will meet you at Little Italy at 2 PM. Look for a small sign with our company logo.\n\nIf you need to reach your guide directly, you can contact them at: (555) 123-4567\n\nOur food tour will take you through the best authentic Italian restaurants and hidden gems in the neighborhood. You'll taste amazing pasta, pizza, and gelato while learning about the area's rich history.\n\nWe look forward to showing you an amazing time! If you have any questions before your tour, feel free to reach out.",
+                FullResponseText = "Hello John! Thank you for booking your tour with NYC Adventure Tours. Your tour guide Maria will meet you at Little Italy at 2 PM. Look for a small sign with our company logo. If you need to reach your guide directly, you can contact them at: (555) 123-4567. Our food tour will take you through the best authentic Italian restaurants and hidden gems in the neighborhood. You'll taste amazing pasta, pizza, and gelato while learning about the area's rich history. We look forward to showing you an amazing time! If you have any questions before your tour, feel free to reach out.",
                 Status = "Sent",
-                AiExtractedData = "{\"userName\":\"John\",\"tourType\":\"Food Tour\",\"date\":\"tomorrow\",\"time\":\"2 PM\"}"
+                AiExtractedData = @"{""userName"":""John"",""tourType"":""Food Tour"",""date"":""tomorrow"",""time"":""2 PM""}"
             },
             new AutomatedResponseLog
             {
@@ -357,9 +612,9 @@
                 TourTimeUsed = "9 AM",
                 IdentifiableObjectUsed = "a small sign with our company logo",
                 GuideNumberUsed = "(555) 234-5678",
-                FullResponseText = "Hello Sarah! Thank you for booking your tour with NYC Adventure Tours.\n\nYour tour guide Tom will meet you at Central Park Entrance at 9 AM. Look for a small sign with our company logo.\n\nIf you need to reach your guide directly, you can contact them at: (555) 234-5678\n\nOur walking tour covers the most scenic routes through Central Park and surrounding neighborhoods. You'll discover hidden paths, historical landmarks, and beautiful viewpoints perfect for photos.\n\nWe look forward to showing you an amazing time! If you have any questions before your tour, feel free to reach out.",
+                FullResponseText = "Hello Sarah! Thank you for booking your tour with NYC Adventure Tours. Your tour guide Tom will meet you at Central Park Entrance at 9 AM. Look for a small sign with our company logo. If you need to reach your guide directly, you can contact them at: (555) 234-5678. Our walking tour covers the most scenic routes through Central Park and surrounding neighborhoods. You'll discover hidden paths, historical landmarks, and beautiful viewpoints perfect for photos. We look forward to showing you an amazing time! If you have any questions before your tour, feel free to reach out.",
                 Status = "Sent",
-                AiExtractedData = "{\"userName\":\"Sarah\",\"tourType\":\"Walking Tour\",\"date\":\"weekend\",\"time\":\"morning\"}"
+                AiExtractedData = @"{""userName"":""Sarah"",""tourType"":""Walking Tour"",""date"":""weekend"",""time"":""morning""}"
             },
             new AutomatedResponseLog
             {
@@ -377,9 +632,9 @@
                 TourTimeUsed = "6 PM",
                 IdentifiableObjectUsed = "a small sign with our company logo",
                 GuideNumberUsed = "(555) 345-6789",
-                FullResponseText = "Hello Mike! Thank you for booking your tour with NYC Adventure Tours.\n\nYour tour guide Professor Williams will meet you at City Hall at 6 PM. Look for a small sign with our company logo.\n\nIf you need to reach your guide directly, you can contact them at: (555) 345-6789\n\nOur historical tour will take you through centuries of New York history, from colonial times to modern day. You'll visit significant landmarks and hear fascinating stories about the people who shaped this great city.\n\nWe look forward to showing you an amazing time! If you have any questions before your tour, feel free to reach out.",
+                FullResponseText = "Hello Mike! Thank you for booking your tour with NYC Adventure Tours. Your tour guide Professor Williams will meet you at City Hall at 6 PM. Look for a small sign with our company logo. If you need to reach your guide directly, you can contact them at: (555) 345-6789. Our historical tour will take you through centuries of New York history, from colonial times to modern day. You'll visit significant landmarks and hear fascinating stories about the people who shaped this great city. We look forward to showing you an amazing time! If you have any questions before your tour, feel free to reach out.",
                 Status = "Sent",
-                AiExtractedData = "{\"userName\":\"Mike\",\"tourType\":\"Historical Tour\",\"date\":\"Friday\",\"time\":\"6 PM\"}"
+                AiExtractedData = @"{""userName"":""Mike"",""tourType"":""Historical Tour"",""date"":""Friday"",""time"":""6 PM""}"
             }
         };
     }
@@ -421,5 +676,132 @@
         }
         
         return "Data available";
+    }
+
+    private void ShowResendDialog(AutomatedResponseLog log)
+    {
+        selectedLogForAction = log;
+        showResendDialog = true;
+    }
+
+    private void CloseActionDialogs()
+    {
+        selectedLogForAction = null;
+        showResendDialog = false;
+        showContactDialog = false;
+        showReviewDialog = false;
+        showExportDialog = false;
+    }
+
+    private void ShowContactDialog(AutomatedResponseLog log)
+    {
+        selectedLogForAction = log;
+        showContactDialog = true;
+    }
+
+    private void ShowReviewDialog(AutomatedResponseLog log)
+    {
+        selectedLogForAction = log;
+        showReviewDialog = true;
+    }
+
+    private void ShowExportDialog(AutomatedResponseLog log)
+    {
+        selectedLogForAction = log;
+        showExportDialog = true;
+    }
+
+    private async Task ConfirmResendMessage()
+    {
+        if (selectedLogForAction == null) return;
+        
+        // Call the API to resend the message
+        var customMessage = string.IsNullOrWhiteSpace(resendMessageText) ? null : resendMessageText;
+        var success = await ApiService.ResendMessageAsync(selectedLogForAction.Id, customMessage);
+        
+        // Reset form
+        resendMessageText = "";
+        showResendDialog = false;
+        selectedLogForAction = null;
+        
+        // In a real app, you'd show a toast notification based on success
+        StateHasChanged();
+    }
+
+    private async Task ConfirmContactCustomer()
+    {
+        if (selectedLogForAction == null) return;
+        
+        // Call the API to initiate customer contact
+        var message = contactMethod == "whatsapp" ? contactMessageText : null;
+        var success = await ApiService.ContactCustomerAsync(selectedLogForAction.ContactWaId, contactMethod, message);
+        
+        // Reset form
+        contactMessageText = "";
+        contactMethod = "whatsapp";
+        showContactDialog = false;
+        selectedLogForAction = null;
+        
+        StateHasChanged();
+    }
+
+    private async Task ConfirmReview()
+    {
+        if (selectedLogForAction == null) return;
+        
+        // Call the API to save the review
+        var success = await ApiService.ReviewLogAsync(selectedLogForAction.Id, reviewStatus, reviewNotes, reviewerName);
+        
+        // Reset form
+        reviewStatus = "approved";
+        reviewNotes = "";
+        reviewerName = "Admin User";
+        showReviewDialog = false;
+        selectedLogForAction = null;
+        
+        StateHasChanged();
+    }
+
+    private async Task ConfirmExport()
+    {
+        if (selectedLogForAction == null) return;
+        
+        // Call the API to export the data
+        var options = new Services.ExportOptions
+        {
+            IncludeResponseText = includeResponseText,
+            IncludeAiData = includeAiData,
+            IncludePerformanceData = includePerformanceData,
+            IncludeTourDetails = includeTourDetails,
+            ExportedBy = "Admin User"
+        };
+        
+        var exportData = await ApiService.ExportLogDataAsync(selectedLogForAction.Id, exportFormat, options);
+        
+        // In a real app, you would trigger a file download here
+        // For demo purposes, we'll just simulate the export
+        
+        // Reset form
+        exportFormat = "json";
+        includeResponseText = true;
+        includeAiData = true;
+        includePerformanceData = true;
+        includeTourDetails = true;
+        showExportDialog = false;
+        selectedLogForAction = null;
+        
+        StateHasChanged();
+    }
+
+    private void OnContactMethodChanged(ChangeEventArgs e)
+    {
+        contactMethod = e.Value?.ToString() ?? "whatsapp";
+        StateHasChanged();
+    }
+
+    private void OnExportFormatChanged(ChangeEventArgs e)
+    {
+        exportFormat = e.Value?.ToString() ?? "json";
+        StateHasChanged();
     }
 } 
