@@ -34,8 +34,9 @@ builder.Services.AddSignalR(options =>
     options.EnableDetailedErrors = true;
 });
 
-// Configure API base URL - back to HTTP for now
-var apiBaseUrl = "http://localhost:5260";
+// Configure API base URL from configuration
+var apiBaseUrl = builder.Configuration.GetSection("ApiSettings:BaseUrl").Value 
+    ?? throw new InvalidOperationException("ApiSettings:BaseUrl is not configured in appsettings.json");
 
 // Add HttpClient with base address
 builder.Services.AddHttpClient<ApiService>(client =>
@@ -45,10 +46,7 @@ builder.Services.AddHttpClient<ApiService>(client =>
 });
 
 // Configure API settings
-builder.Services.Configure<ApiSettings>(options =>
-{
-    options.BaseUrl = apiBaseUrl;
-});
+builder.Services.Configure<ApiSettings>(builder.Configuration.GetSection("ApiSettings"));
 
 var app = builder.Build();
 
