@@ -331,6 +331,46 @@ namespace WhatsAppBusinessBlazorClient.Services
                 return false;
             }
         }
+
+        public async Task<byte[]?> ExportBulkLogDataAsync(string exportType, string format, DateTime fromDate, DateTime toDate, string? contactFilter, ExportOptions options)
+        {
+            try
+            {
+                _logger.LogInformation("Exporting bulk data - Type: {ExportType}, Format: {Format}", exportType, format);
+                
+                var request = new
+                {
+                    ExportType = exportType,
+                    Format = format,
+                    FromDate = fromDate,
+                    ToDate = toDate,
+                    ContactFilter = contactFilter,
+                    Options = options
+                };
+
+                var json = JsonSerializer.Serialize(request);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                
+                var response = await _httpClient.PostAsync("api/chat/export-bulk", content);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var data = await response.Content.ReadAsByteArrayAsync();
+                    _logger.LogInformation("Bulk data exported successfully - Type: {ExportType}", exportType);
+                    return data;
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to export bulk data. Status: {StatusCode}", response.StatusCode);
+                    return null;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting bulk data - Type: {ExportType}", exportType);
+                return null;
+            }
+        }
     }
 
     public class SystemStats

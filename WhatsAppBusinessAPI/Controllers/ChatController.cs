@@ -441,6 +441,118 @@ namespace WhatsAppBusinessAPI.Controllers
                 return StatusCode(500, "Internal server error while contacting customer.");
             }
         }
+
+        [HttpPost("export-bulk")]
+        public async Task<IActionResult> ExportBulkData([FromBody] ExportBulkRequest request)
+        {
+            try
+            {
+                _logger.LogInformation("Exporting bulk data - Type: {ExportType}, Format: {Format}", request.ExportType, request.Format);
+
+                // Get logs based on export type and filters
+                var logs = await _chatRepository.GetAutomatedResponseLogsAsync(1000); // Get more logs for bulk export
+                
+                // Filter logs based on export type
+                var filteredLogs = request.ExportType.ToLower() switch
+                {
+                    "sent" => logs.Where(l => l.Status == "Sent"),
+                    "received" => logs.Where(l => l.Status != "Sent"),
+                    "by-contact" => logs.Where(l => string.IsNullOrEmpty(request.ContactFilter) || l.ContactWaId == request.ContactFilter),
+                    _ => logs // "all" or default
+                };
+
+                // Apply date range filter
+                filteredLogs = filteredLogs.Where(l => l.RequestReceivedTime >= request.FromDate && l.RequestReceivedTime <= request.ToDate);
+
+                // Generate export data based on format
+                byte[] exportData = request.Format.ToLower() switch
+                {
+                    "json" => GenerateJsonExport(filteredLogs, request.Options),
+                    "csv" => GenerateCsvExport(filteredLogs, request.Options),
+                    "excel" => GenerateExcelExport(filteredLogs, request.Options),
+                    _ => GenerateJsonExport(filteredLogs, request.Options)
+                };
+
+                var fileName = $"bulk_export_{request.ExportType}_{DateTime.Now:yyyyMMdd_HHmmss}.{request.Format}";
+                var mimeType = request.Format.ToLower() switch
+                {
+                    "json" => "application/json",
+                    "csv" => "text/csv",
+                    "excel" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    _ => "application/octet-stream"
+                };
+
+                return File(exportData, mimeType, fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting bulk data: {ErrorMessage}", ex.Message);
+                return StatusCode(500, "Internal server error while exporting bulk data");
+            }
+        }
+
+        private byte[] GenerateJsonExport(IEnumerable<AutomatedResponseLog> logs, ExportBulkOptions options)
+        {
+            var exportData = logs.Select(log => new
+            {
+                Id = log.Id,
+                ContactWaId = options.IncludeContacts ? log.ContactWaId : null,
+                RequestReceivedTime = options.IncludeTimestamps ? log.RequestReceivedTime : (DateTime?)null,
+                ResponseSentTime = options.IncludeTimestamps ? log.ResponseSentTime : (DateTime?)null,
+                FullResponseText = options.IncludeMessages ? log.FullResponseText : null,
+                AiExtractedData = options.IncludeAiData ? log.AiExtractedData : null,
+                ProcessingDurationMs = options.IncludePerformance ? log.ProcessingDurationMs : (int?)null,
+                AiApiCallDurationMs = options.IncludePerformance ? log.AiApiCallDurationMs : (int?)null,
+                TemplateUsed = options.IncludeTours ? log.TemplateUsed : null,
+                GuideNameUsed = options.IncludeTours ? log.GuideNameUsed : null,
+                TourLocationUsed = options.IncludeTours ? log.TourLocationUsed : null,
+                Status = log.Status
+            });
+
+            var json = JsonSerializer.Serialize(exportData, new JsonSerializerOptions { WriteIndented = true });
+            return System.Text.Encoding.UTF8.GetBytes(json);
+        }
+
+        private byte[] GenerateCsvExport(IEnumerable<AutomatedResponseLog> logs, ExportBulkOptions options)
+        {
+            var csv = new System.Text.StringBuilder();
+            
+            // Header
+            var headers = new List<string> { "Id" };
+            if (options.IncludeContacts) headers.Add("ContactWaId");
+            if (options.IncludeTimestamps) headers.AddRange(new[] { "RequestReceivedTime", "ResponseSentTime" });
+            if (options.IncludeMessages) headers.Add("FullResponseText");
+            if (options.IncludeAiData) headers.Add("AiExtractedData");
+            if (options.IncludePerformance) headers.AddRange(new[] { "ProcessingDurationMs", "AiApiCallDurationMs" });
+            if (options.IncludeTours) headers.AddRange(new[] { "TemplateUsed", "GuideNameUsed", "TourLocationUsed" });
+            headers.Add("Status");
+            
+            csv.AppendLine(string.Join(",", headers));
+
+            // Data rows
+            foreach (var log in logs)
+            {
+                var values = new List<string> { log.Id.ToString() };
+                if (options.IncludeContacts) values.Add($"\"{log.ContactWaId}\"");
+                if (options.IncludeTimestamps) values.AddRange(new[] { $"\"{log.RequestReceivedTime}\"", $"\"{log.ResponseSentTime}\"" });
+                if (options.IncludeMessages) values.Add($"\"{log.FullResponseText?.Replace("\"", "\"\"")}\"");
+                if (options.IncludeAiData) values.Add($"\"{log.AiExtractedData?.Replace("\"", "\"\"")}\"");
+                if (options.IncludePerformance) values.AddRange(new[] { log.ProcessingDurationMs.ToString(), log.AiApiCallDurationMs.ToString() });
+                if (options.IncludeTours) values.AddRange(new[] { $"\"{log.TemplateUsed}\"", $"\"{log.GuideNameUsed}\"", $"\"{log.TourLocationUsed}\"" });
+                values.Add($"\"{log.Status}\"");
+                
+                csv.AppendLine(string.Join(",", values));
+            }
+
+            return System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+        }
+
+        private byte[] GenerateExcelExport(IEnumerable<AutomatedResponseLog> logs, ExportBulkOptions options)
+        {
+            // For demo purposes, return CSV data with Excel MIME type
+            // In a real implementation, you would use a library like EPPlus or ClosedXML
+            return GenerateCsvExport(logs, options);
+        }
     }
 
     // Helper classes for incoming requests
@@ -498,5 +610,26 @@ namespace WhatsAppBusinessAPI.Controllers
         public string ContactWaId { get; set; } = string.Empty;
         public string Method { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
+    }
+
+    public class ExportBulkRequest
+    {
+        public string ExportType { get; set; } = string.Empty;
+        public string Format { get; set; } = string.Empty;
+        public DateTime FromDate { get; set; }
+        public DateTime ToDate { get; set; }
+        public string? ContactFilter { get; set; }
+        public ExportBulkOptions Options { get; set; } = new ExportBulkOptions();
+    }
+
+    public class ExportBulkOptions
+    {
+        public bool IncludeMessages { get; set; } = true;
+        public bool IncludeTimestamps { get; set; } = true;
+        public bool IncludeContacts { get; set; } = true;
+        public bool IncludeAiData { get; set; } = true;
+        public bool IncludePerformance { get; set; } = true;
+        public bool IncludeTours { get; set; } = true;
+        public string ExportedBy { get; set; } = string.Empty;
     }
 } 

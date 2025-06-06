@@ -2,76 +2,112 @@
 @using WhatsAppBusinessBlazorClient.Models
 @using WhatsAppBusinessBlazorClient.Services
 @inject ApiService ApiService
+@inject IJSRuntime JSRuntime
 
 <PageTitle>WhatsApp Business Admin - Analytics</PageTitle>
 
 <div class="container-fluid">
-    <div class="row mb-4">
-        <div class="col">
-            <h2>Analytics Dashboard</h2>
-            <p class="text-muted">Monitor automated responses and system performance</p>
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Analytics Dashboard</h1>
+                <button class="btn btn-outline-primary" @onclick="RefreshLogs">
+                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                </button>
+            </div>
         </div>
     </div>
 
+    <!-- Bulk Export Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-download"></i> Bulk Export Options
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <button class="btn btn-success w-100 mb-2" @onclick="ShowBulkExportAllMessages">
+                                <i class="bi bi-file-earmark-spreadsheet"></i>
+                                Export All Messages
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-info w-100 mb-2" @onclick="ShowBulkExportSentMessages">
+                                <i class="bi bi-arrow-up-circle"></i>
+                                Export Sent Messages
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-warning w-100 mb-2" @onclick="ShowBulkExportReceivedMessages">
+                                <i class="bi bi-arrow-down-circle"></i>
+                                Export Received Messages
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-secondary w-100 mb-2" @onclick="ShowBulkExportByContact">
+                                <i class="bi bi-person"></i>
+                                Export by Contact
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
     <!-- Statistics Cards -->
     <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card bg-primary text-white">
+        <div class="col-md-2">
+            <div class="card text-center">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h4 class="card-title">@totalContacts</h4>
-                            <p class="card-text">Total Contacts</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-people" style="font-size: 2rem;"></i>
-                        </div>
-                    </div>
+                    <h5 class="card-title text-primary">@totalContacts</h5>
+                    <p class="card-text">Total Contacts</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
+        <div class="col-md-2">
+            <div class="card text-center">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h4 class="card-title">@totalMessages</h4>
-                            <p class="card-text">Total Messages</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-chat-dots" style="font-size: 2rem;"></i>
-                        </div>
-                    </div>
+                    <h5 class="card-title text-info">@totalMessages</h5>
+                    <p class="card-text">Total Messages</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-info text-white">
+        <div class="col-md-2">
+            <div class="card text-center">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h4 class="card-title">@automatedResponsesToday</h4>
-                            <p class="card-text">Responses Today</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-robot" style="font-size: 2rem;"></i>
-                        </div>
-                    </div>
+                    <h5 class="card-title text-success">@automatedResponsesToday</h5>
+                    <p class="card-text">Automated Today</p>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-white">
+        <div class="col-md-2">
+            <div class="card text-center">
                 <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <div>
-                            <h4 class="card-title">@successRate.ToString("F1")%</h4>
-                            <p class="card-text">Success Rate</p>
-                        </div>
-                        <div class="align-self-center">
-                            <i class="bi bi-check-circle" style="font-size: 2rem;"></i>
-                        </div>
-                    </div>
+                    <h5 class="card-title text-warning">@successRate.ToString("F1")%</h5>
+                    <p class="card-text">Success Rate</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-secondary">@averageProcessingTime ms</h5>
+                    <p class="card-text">Avg Processing</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title text-dark">@averageAiTime ms</h5>
+                    <p class="card-text">Avg AI Time</p>
                 </div>
             </div>
         </div>
@@ -511,6 +547,155 @@
     </div>
 }
 
+<!-- Bulk Export Dialog -->
+@if (showBulkExportDialog)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Bulk Export - @bulkExportType</h5>
+                    <button type="button" class="btn-close" @onclick="CloseBulkExportDialog"></button>
+                </div>
+                <div class="modal-body">
+                    @if (bulkExportType == "by-contact")
+                    {
+                        <div class="mb-3">
+                            <label class="form-label">Select Contact:</label>
+                            <select class="form-select" @bind="selectedContactForExport">
+                                <option value="">-- Select a contact --</option>
+                                @if (logs != null)
+                                {
+                                    @foreach (var contact in logs.Select(l => l.ContactWaId).Distinct())
+                                    {
+                                        <option value="@contact">@contact</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    }
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Export Format:</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="bulkExportFormat" id="bulkJson" value="json" @onchange="OnBulkExportFormatChanged" checked="@(bulkExportFormat == "json")">
+                                    <label class="form-check-label" for="bulkJson">
+                                        <i class="bi bi-filetype-json"></i> JSON Format
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="bulkExportFormat" id="bulkCsv" value="csv" @onchange="OnBulkExportFormatChanged">
+                                    <label class="form-check-label" for="bulkCsv">
+                                        <i class="bi bi-filetype-csv"></i> CSV Format
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="bulkExportFormat" id="bulkExcel" value="excel" @onchange="OnBulkExportFormatChanged">
+                                    <label class="form-check-label" for="bulkExcel">
+                                        <i class="bi bi-file-earmark-excel"></i> Excel Format
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Date Range:</label>
+                                <div class="mb-2">
+                                    <label class="form-label">From:</label>
+                                    <input type="date" class="form-control" @bind="bulkExportFromDate">
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">To:</label>
+                                    <input type="date" class="form-control" @bind="bulkExportToDate">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Include Data:</label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="bulkIncludeMessages" @bind="bulkIncludeMessages">
+                                    <label class="form-check-label" for="bulkIncludeMessages">Message Content</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="bulkIncludeTimestamps" @bind="bulkIncludeTimestamps">
+                                    <label class="form-check-label" for="bulkIncludeTimestamps">Timestamps</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="bulkIncludeContacts" @bind="bulkIncludeContacts">
+                                    <label class="form-check-label" for="bulkIncludeContacts">Contact Information</label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="bulkIncludeAiData" @bind="bulkIncludeAiData">
+                                    <label class="form-check-label" for="bulkIncludeAiData">AI Analysis Data</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="bulkIncludePerformance" @bind="bulkIncludePerformance">
+                                    <label class="form-check-label" for="bulkIncludePerformance">Performance Metrics</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="bulkIncludeTours" @bind="bulkIncludeTours">
+                                    <label class="form-check-label" for="bulkIncludeTours">Tour Details</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> 
+                        @GetBulkExportDescription()
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseBulkExportDialog">Cancel</button>
+                    <button type="button" class="btn btn-success" @onclick="ConfirmBulkExport" disabled="@(bulkExportType == "by-contact" && string.IsNullOrEmpty(selectedContactForExport))">
+                        <i class="bi bi-download"></i> Export Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@if (showSuccessMessage)
+{
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050;">
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-success text-white">
+                <i class="bi bi-check-circle me-2"></i>
+                <strong class="me-auto">Success</strong>
+                <button type="button" class="btn-close btn-close-white" @onclick="() => showSuccessMessage = false"></button>
+            </div>
+            <div class="toast-body">
+                @successMessage
+            </div>
+        </div>
+    </div>
+}
+
+@if (showErrorMessage)
+{
+    <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050;">
+        <div class="toast show" role="alert">
+            <div class="toast-header bg-danger text-white">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                <strong class="me-auto">Error</strong>
+                <button type="button" class="btn-close btn-close-white" @onclick="() => showErrorMessage = false"></button>
+            </div>
+            <div class="toast-body">
+                @errorMessage
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<AutomatedResponseLog>? logs;
     private AutomatedResponseLog? selectedLog;
@@ -537,6 +722,22 @@
     private bool includePerformanceData = true;
     private bool includeTourDetails = true;
     private string exportFormat = "json";
+    private bool showBulkExportDialog = false;
+    private string bulkExportType = "";
+    private string selectedContactForExport = "";
+    private string bulkExportFormat = "json";
+    private DateTime bulkExportFromDate = DateTime.Today;
+    private DateTime bulkExportToDate = DateTime.Today.AddDays(1);
+    private bool bulkIncludeMessages = true;
+    private bool bulkIncludeTimestamps = true;
+    private bool bulkIncludeContacts = true;
+    private bool bulkIncludeAiData = true;
+    private bool bulkIncludePerformance = true;
+    private bool bulkIncludeTours = true;
+    private string successMessage = "";
+    private string errorMessage = "";
+    private bool showSuccessMessage = false;
+    private bool showErrorMessage = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -715,26 +916,70 @@
     {
         if (selectedLogForAction == null) return;
         
-        // Call the API to resend the message
-        var customMessage = string.IsNullOrWhiteSpace(resendMessageText) ? null : resendMessageText;
-        var success = await ApiService.ResendMessageAsync(selectedLogForAction.Id, customMessage);
+        try
+        {
+            // Call the API to resend the message
+            var customMessage = string.IsNullOrWhiteSpace(resendMessageText) ? null : resendMessageText;
+            var success = await ApiService.ResendMessageAsync(selectedLogForAction.Id, customMessage);
+            
+            if (success)
+            {
+                successMessage = "Message resent successfully!";
+                showSuccessMessage = true;
+            }
+            else
+            {
+                errorMessage = "Failed to resend message. Please try again.";
+                showErrorMessage = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error resending message: {ex.Message}";
+            showErrorMessage = true;
+        }
         
         // Reset form
         resendMessageText = "";
         showResendDialog = false;
         selectedLogForAction = null;
         
-        // In a real app, you'd show a toast notification based on success
         StateHasChanged();
+        
+        // Auto-hide messages after 3 seconds
+        _ = Task.Delay(3000).ContinueWith(_ => {
+            showSuccessMessage = false;
+            showErrorMessage = false;
+            InvokeAsync(StateHasChanged);
+        });
     }
 
     private async Task ConfirmContactCustomer()
     {
         if (selectedLogForAction == null) return;
         
-        // Call the API to initiate customer contact
-        var message = contactMethod == "whatsapp" ? contactMessageText : null;
-        var success = await ApiService.ContactCustomerAsync(selectedLogForAction.ContactWaId, contactMethod, message);
+        try
+        {
+            // Call the API to initiate customer contact
+            var message = contactMethod == "whatsapp" ? contactMessageText : null;
+            var success = await ApiService.ContactCustomerAsync(selectedLogForAction.ContactWaId, contactMethod, message);
+            
+            if (success)
+            {
+                successMessage = $"Customer contact initiated via {contactMethod}!";
+                showSuccessMessage = true;
+            }
+            else
+            {
+                errorMessage = "Failed to initiate customer contact. Please try again.";
+                showErrorMessage = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error contacting customer: {ex.Message}";
+            showErrorMessage = true;
+        }
         
         // Reset form
         contactMessageText = "";
@@ -743,14 +988,40 @@
         selectedLogForAction = null;
         
         StateHasChanged();
+        
+        // Auto-hide messages after 3 seconds
+        _ = Task.Delay(3000).ContinueWith(_ => {
+            showSuccessMessage = false;
+            showErrorMessage = false;
+            InvokeAsync(StateHasChanged);
+        });
     }
 
     private async Task ConfirmReview()
     {
         if (selectedLogForAction == null) return;
         
-        // Call the API to save the review
-        var success = await ApiService.ReviewLogAsync(selectedLogForAction.Id, reviewStatus, reviewNotes, reviewerName);
+        try
+        {
+            // Call the API to save the review
+            var success = await ApiService.ReviewLogAsync(selectedLogForAction.Id, reviewStatus, reviewNotes, reviewerName);
+            
+            if (success)
+            {
+                successMessage = "Review saved successfully!";
+                showSuccessMessage = true;
+            }
+            else
+            {
+                errorMessage = "Failed to save review. Please try again.";
+                showErrorMessage = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error saving review: {ex.Message}";
+            showErrorMessage = true;
+        }
         
         // Reset form
         reviewStatus = "approved";
@@ -760,26 +1031,53 @@
         selectedLogForAction = null;
         
         StateHasChanged();
+        
+        // Auto-hide messages after 3 seconds
+        _ = Task.Delay(3000).ContinueWith(_ => {
+            showSuccessMessage = false;
+            showErrorMessage = false;
+            InvokeAsync(StateHasChanged);
+        });
     }
 
     private async Task ConfirmExport()
     {
         if (selectedLogForAction == null) return;
         
-        // Call the API to export the data
-        var options = new Services.ExportOptions
+        try
         {
-            IncludeResponseText = includeResponseText,
-            IncludeAiData = includeAiData,
-            IncludePerformanceData = includePerformanceData,
-            IncludeTourDetails = includeTourDetails,
-            ExportedBy = "Admin User"
-        };
-        
-        var exportData = await ApiService.ExportLogDataAsync(selectedLogForAction.Id, exportFormat, options);
-        
-        // In a real app, you would trigger a file download here
-        // For demo purposes, we'll just simulate the export
+            // Call the API to export the data
+            var options = new Services.ExportOptions
+            {
+                IncludeResponseText = includeResponseText,
+                IncludeAiData = includeAiData,
+                IncludePerformanceData = includePerformanceData,
+                IncludeTourDetails = includeTourDetails,
+                ExportedBy = "Admin User"
+            };
+            
+            var exportData = await ApiService.ExportLogDataAsync(selectedLogForAction.Id, exportFormat, options);
+            
+            if (exportData != null && exportData.Length > 0)
+            {
+                // Trigger file download
+                var fileName = $"response_{selectedLogForAction.Id}_{DateTime.Now:yyyyMMdd_HHmmss}.{exportFormat}";
+                await DownloadFile(exportData, fileName, GetMimeType(exportFormat));
+                
+                successMessage = "Export completed successfully!";
+                showSuccessMessage = true;
+            }
+            else
+            {
+                errorMessage = "Failed to export data. Please try again.";
+                showErrorMessage = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error exporting data: {ex.Message}";
+            showErrorMessage = true;
+        }
         
         // Reset form
         exportFormat = "json";
@@ -791,6 +1089,13 @@
         selectedLogForAction = null;
         
         StateHasChanged();
+        
+        // Auto-hide messages after 3 seconds
+        _ = Task.Delay(3000).ContinueWith(_ => {
+            showSuccessMessage = false;
+            showErrorMessage = false;
+            InvokeAsync(StateHasChanged);
+        });
     }
 
     private void OnContactMethodChanged(ChangeEventArgs e)
@@ -803,5 +1108,145 @@
     {
         exportFormat = e.Value?.ToString() ?? "json";
         StateHasChanged();
+    }
+
+    private void ShowBulkExportDialog(string type)
+    {
+        bulkExportType = type;
+        showBulkExportDialog = true;
+    }
+
+    private void CloseBulkExportDialog()
+    {
+        showBulkExportDialog = false;
+    }
+
+    private string GetBulkExportDescription()
+    {
+        switch (bulkExportType)
+        {
+            case "all":
+                return "This will export all messages in the selected format and date range.";
+            case "sent":
+                return "This will export all sent messages in the selected format and date range.";
+            case "received":
+                return "This will export all received messages in the selected format and date range.";
+            case "by-contact":
+                return "This will export messages from the selected contact in the selected format and date range.";
+            default:
+                return "This will export messages in the selected format and date range.";
+        }
+    }
+
+    private async Task ConfirmBulkExport()
+    {
+        if (bulkExportType == "by-contact" && string.IsNullOrEmpty(selectedContactForExport)) return;
+        
+        try
+        {
+            // Call the API to export the data
+            var options = new Services.ExportOptions
+            {
+                IncludeResponseText = bulkIncludeMessages,
+                IncludeAiData = bulkIncludeAiData,
+                IncludePerformanceData = bulkIncludePerformance,
+                IncludeTourDetails = bulkIncludeTours,
+                ExportedBy = "Admin User"
+            };
+            
+            var exportData = await ApiService.ExportBulkLogDataAsync(bulkExportType, bulkExportFormat, bulkExportFromDate, bulkExportToDate, selectedContactForExport, options);
+            
+            if (exportData != null && exportData.Length > 0)
+            {
+                // Trigger file download
+                var fileName = $"bulk_export_{bulkExportType}_{DateTime.Now:yyyyMMdd_HHmmss}.{bulkExportFormat}";
+                await DownloadFile(exportData, fileName, GetMimeType(bulkExportFormat));
+                
+                successMessage = "Bulk export completed successfully!";
+                showSuccessMessage = true;
+            }
+            else
+            {
+                errorMessage = "Failed to export data. Please try again.";
+                showErrorMessage = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error exporting data: {ex.Message}";
+            showErrorMessage = true;
+        }
+        
+        // Reset form
+        bulkExportType = "";
+        selectedContactForExport = "";
+        bulkExportFormat = "json";
+        bulkIncludeMessages = true;
+        bulkIncludeAiData = true;
+        bulkIncludePerformance = true;
+        bulkIncludeTours = true;
+        showBulkExportDialog = false;
+        
+        StateHasChanged();
+        
+        // Auto-hide messages after 3 seconds
+        _ = Task.Delay(3000).ContinueWith(_ => {
+            showSuccessMessage = false;
+            showErrorMessage = false;
+            InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private void OnBulkExportFormatChanged(ChangeEventArgs e)
+    {
+        bulkExportFormat = e.Value?.ToString() ?? "json";
+        StateHasChanged();
+    }
+
+    private void ShowBulkExportAllMessages()
+    {
+        ShowBulkExportDialog("all");
+    }
+
+    private void ShowBulkExportSentMessages()
+    {
+        ShowBulkExportDialog("sent");
+    }
+
+    private void ShowBulkExportReceivedMessages()
+    {
+        ShowBulkExportDialog("received");
+    }
+
+    private void ShowBulkExportByContact()
+    {
+        ShowBulkExportDialog("by-contact");
+    }
+
+    private async Task DownloadFile(byte[] data, string fileName, string mimeType)
+    {
+        try
+        {
+            var base64 = Convert.ToBase64String(data);
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, mimeType, base64);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error downloading file: {ex.Message}";
+            showErrorMessage = true;
+            StateHasChanged();
+        }
+    }
+
+    private string GetMimeType(string format)
+    {
+        return format.ToLower() switch
+        {
+            "json" => "application/json",
+            "csv" => "text/csv",
+            "excel" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            "pdf" => "application/pdf",
+            _ => "application/octet-stream"
+        };
     }
 } 
