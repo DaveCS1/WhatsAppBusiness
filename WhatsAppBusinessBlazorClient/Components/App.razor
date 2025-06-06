@@ -35,6 +35,52 @@
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
         };
+
+        // Blazor Server connection monitoring and debugging
+        window.blazorReconnect = {
+            showReconnectUI: function() {
+                console.log('🔴 Blazor connection lost - attempting to reconnect...');
+                // Show a reconnection indicator
+                const indicator = document.createElement('div');
+                indicator.id = 'blazor-reconnect-indicator';
+                indicator.innerHTML = `
+                    <div style="position: fixed; top: 0; left: 0; right: 0; background: #dc3545; color: white; text-align: center; padding: 10px; z-index: 9999;">
+                        🔄 Connection lost. Attempting to reconnect...
+                    </div>
+                `;
+                document.body.appendChild(indicator);
+            },
+            hideReconnectUI: function() {
+                console.log('🟢 Blazor connection restored!');
+                const indicator = document.getElementById('blazor-reconnect-indicator');
+                if (indicator) {
+                    indicator.remove();
+                }
+            }
+        };
+
+        // Add detailed connection monitoring
+        window.monitorBlazorConnection = function() {
+            console.log('🔧 Setting up Blazor connection monitoring...');
+            
+            // Monitor for connection state changes
+            if (window.Blazor && window.Blazor.defaultReconnectionHandler) {
+                console.log('📡 Blazor reconnection handler available');
+            }
+            
+            // Log when buttons are clicked
+            document.addEventListener('click', function(e) {
+                if (e.target.tagName === 'BUTTON') {
+                    console.log('🖱️ Button clicked:', e.target.textContent.trim());
+                }
+            });
+        };
+
+        // Configure Blazor reconnection options (Blazor is already started automatically)
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Blazor reconnection monitoring enabled');
+            window.monitorBlazorConnection();
+        });
     </script>
 </body>
 

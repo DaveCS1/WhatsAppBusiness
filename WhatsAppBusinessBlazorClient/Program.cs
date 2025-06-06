@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Components.Server;
+using Microsoft.AspNetCore.Components.Server.Circuits;
 using WhatsAppBusinessBlazorClient.Components;
 using WhatsAppBusinessBlazorClient.Models;
 using WhatsAppBusinessBlazorClient.Services;
@@ -8,7 +10,31 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
-// Configure API base URL - hardcoded for now to ensure it works
+// Add circuit handler for connection monitoring
+builder.Services.AddScoped<CircuitHandler, WhatsAppBusinessBlazorClient.Services.LoggingCircuitHandler>();
+
+// Configure Blazor Server circuit options
+builder.Services.Configure<CircuitOptions>(options =>
+{
+    options.DetailedErrors = builder.Environment.IsDevelopment();
+    options.DisconnectedCircuitMaxRetained = 100;
+    options.DisconnectedCircuitRetentionPeriod = TimeSpan.FromMinutes(3);
+    options.JSInteropDefaultCallTimeout = TimeSpan.FromMinutes(1);
+    options.MaxBufferedUnacknowledgedRenderBatches = 10;
+});
+
+// Configure SignalR for better connection stability
+builder.Services.AddSignalR(options =>
+{
+    options.ClientTimeoutInterval = TimeSpan.FromMinutes(10);
+    options.HandshakeTimeout = TimeSpan.FromSeconds(30);
+    options.KeepAliveInterval = TimeSpan.FromSeconds(10);
+    options.MaximumReceiveMessageSize = 1024 * 1024; // 1MB
+    options.StreamBufferCapacity = 10;
+    options.EnableDetailedErrors = true;
+});
+
+// Configure API base URL - back to HTTP for now
 var apiBaseUrl = "http://localhost:5260";
 Console.WriteLine($"🔧 API Base URL: {apiBaseUrl}");
 
@@ -36,7 +62,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+// Temporarily disable HTTPS redirect for development to avoid mixed content issues
+// app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
