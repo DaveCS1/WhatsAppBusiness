@@ -1,8 +1,10 @@
 @page "/chat"
+@rendermode InteractiveServer
 @using WhatsAppBusinessBlazorClient.Models
 @using WhatsAppBusinessBlazorClient.Services
 @inject IJSRuntime JSRuntime
 @inject ApiService ApiService
+@inject ILogger<Chat> Logger
 
 <PageTitle>WhatsApp Business Admin - Chat</PageTitle>
 
@@ -13,7 +15,7 @@
             <div class="p-3 border-bottom">
                 <h5>Contacts</h5>
                 <div class="input-group">
-                    <input type="text" class="form-control" placeholder="Search contacts..." @bind="searchTerm" @oninput="FilterContacts">
+                    <input type="text" class="form-control" placeholder="Search contacts..." @bind="searchTerm" @bind:event="oninput" @onkeyup="FilterContacts">
                     <span class="input-group-text"><i class="bi bi-search"></i></span>
                 </div>
             </div>
@@ -155,16 +157,23 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // Don't load data immediately - wait for component to render
+        Logger.LogInformation("Chat component initializing...");
+        // Load contacts immediately
+        await LoadContacts();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            // Load data after the component has rendered
-            await LoadContacts();
-            StateHasChanged();
+            Logger.LogInformation("Chat component first render completed");
+            // If contacts weren't loaded in OnInitializedAsync, try again
+            if (contacts == null || !contacts.Any())
+            {
+                Logger.LogInformation("Contacts not loaded, retrying...");
+                await LoadContacts();
+                StateHasChanged();
+            }
         }
     }
 
@@ -172,30 +181,62 @@
     {
         try
         {
+            Logger.LogInformation("Loading contacts from API...");
             contacts = await ApiService.GetContactsAsync();
-            filteredContacts = contacts.OrderByDescending(c => c.LastMessageTimestamp).ToList();
+            
+            if (contacts != null && contacts.Any())
+            {
+                Logger.LogInformation("Loaded {Count} contacts from API", contacts.Count);
+                filteredContacts = contacts.OrderByDescending(c => c.LastMessageTimestamp).ToList();
+            }
+            else
+            {
+                Logger.LogWarning("API returned empty contact list, using sample data");
+                LoadSampleContacts();
+            }
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Error loading contacts from API: {Message}", ex.Message);
             // Fallback to sample data if API is not available
-            contacts = new List<Contact>
-            {
-                new Contact
-                {
-                    Id = 1,
-                    WaId = "1234567890",
-                    DisplayName = "John Smith (Sample)",
-                    LastMessageTimestamp = DateTime.Now.AddMinutes(-5),
-                    ExtractedUserName = "John",
-                    LastExtractedTourType = "Food Tour",
-                    LastExtractedTourDate = "tomorrow",
-                    LastExtractedTourTime = "2 PM",
-                    CreatedAt = DateTime.Now.AddDays(-2),
-                    UpdatedAt = DateTime.Now.AddMinutes(-5)
-                }
-            };
-            filteredContacts = contacts.OrderByDescending(c => c.LastMessageTimestamp).ToList();
+            LoadSampleContacts();
         }
+    }
+
+    private void LoadSampleContacts()
+    {
+        Logger.LogInformation("Loading sample contacts...");
+        contacts = new List<Contact>
+        {
+            new Contact
+            {
+                Id = 1,
+                WaId = "1234567890",
+                DisplayName = "John Smith (Sample)",
+                LastMessageTimestamp = DateTime.Now.AddMinutes(-5),
+                ExtractedUserName = "John",
+                LastExtractedTourType = "Food Tour",
+                LastExtractedTourDate = "tomorrow",
+                LastExtractedTourTime = "2 PM",
+                CreatedAt = DateTime.Now.AddDays(-2),
+                UpdatedAt = DateTime.Now.AddMinutes(-5)
+            },
+            new Contact
+            {
+                Id = 2,
+                WaId = "0987654321",
+                DisplayName = "Jane Doe (Sample)",
+                LastMessageTimestamp = DateTime.Now.AddMinutes(-15),
+                ExtractedUserName = "Jane",
+                LastExtractedTourType = "City Tour",
+                LastExtractedTourDate = "next week",
+                LastExtractedTourTime = "10 AM",
+                CreatedAt = DateTime.Now.AddDays(-1),
+                UpdatedAt = DateTime.Now.AddMinutes(-15)
+            }
+        };
+        filteredContacts = contacts.OrderByDescending(c => c.LastMessageTimestamp).ToList();
+        Logger.LogInformation("Loaded {Count} sample contacts", contacts.Count);
     }
 
     private async Task SelectContact(Contact contact)
@@ -211,28 +252,87 @@
 
         try
         {
+            Logger.LogInformation("Loading messages for contact {ContactId}", contactId);
             messages = await ApiService.GetMessagesAsync(contactId);
+            
+            if (messages != null && messages.Any())
+            {
+                Logger.LogInformation("Loaded {Count} messages for contact {ContactId}", messages.Count, contactId);
+            }
+            else
+            {
+                Logger.LogInformation("No messages found for contact {ContactId}, using sample data", contactId);
+                LoadSampleMessages(contactId);
+            }
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "Error loading messages for contact {ContactId}: {Message}", contactId, ex.Message);
             // Fallback to sample messages if API is not available
-            messages = new List<Message>
-            {
-                new Message { Id = 1, ContactId = contactId, Body = "Sample message - API not connected", IsFromMe = false, Timestamp = DateTime.Now.AddMinutes(-10), Status = "delivered" }
-            };
+            LoadSampleMessages(contactId);
         }
 
         StateHasChanged();
         await ScrollToBottom();
     }
 
+    private void LoadSampleMessages(int contactId)
+    {
+        messages = new List<Message>
+        {
+            new Message 
+            { 
+                Id = 1, 
+                ContactId = contactId, 
+                Body = "Hello! I'm interested in booking a tour.", 
+                IsFromMe = false, 
+                Timestamp = DateTime.Now.AddMinutes(-30), 
+                Status = "delivered" 
+            },
+            new Message 
+            { 
+                Id = 2, 
+                ContactId = contactId, 
+                Body = "Hi! Thanks for your interest. What type of tour are you looking for?", 
+                IsFromMe = true, 
+                Timestamp = DateTime.Now.AddMinutes(-25), 
+                Status = "sent" 
+            },
+            new Message 
+            { 
+                Id = 3, 
+                ContactId = contactId, 
+                Body = "I'd like a food tour for tomorrow around 2 PM.", 
+                IsFromMe = false, 
+                Timestamp = DateTime.Now.AddMinutes(-20), 
+                Status = "delivered" 
+            },
+            new Message 
+            { 
+                Id = 4, 
+                ContactId = contactId, 
+                Body = "Sample message - API not connected", 
+                IsFromMe = false, 
+                Timestamp = DateTime.Now.AddMinutes(-10), 
+                Status = "delivered" 
+            }
+        };
+    }
+
     private void FilterContacts()
     {
-        if (contacts == null) return;
+        Logger.LogInformation("Filtering contacts with search term: '{SearchTerm}'", searchTerm);
+        
+        if (contacts == null) 
+        {
+            Logger.LogWarning("Cannot filter contacts - contacts list is null");
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(searchTerm))
         {
             filteredContacts = contacts.OrderByDescending(c => c.LastMessageTimestamp).ToList();
+            Logger.LogInformation("Search term empty, showing all {Count} contacts", filteredContacts.Count);
         }
         else
         {
@@ -242,7 +342,10 @@
                            (c.ExtractedUserName?.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ?? false))
                 .OrderByDescending(c => c.LastMessageTimestamp)
                 .ToList();
+            Logger.LogInformation("Filtered to {Count} contacts matching '{SearchTerm}'", filteredContacts.Count, searchTerm);
         }
+        
+        StateHasChanged();
     }
 
     private async Task SendMessage()
@@ -315,21 +418,26 @@
     {
         try
         {
+            Logger.LogInformation("Testing API connection...");
             var isConnected = await ApiService.TestApiConnectionAsync();
             var message = isConnected ? "✅ API connection successful!" : "❌ API connection failed!";
             
-            // You could show this in a toast or alert, for now just log it
             Console.WriteLine(message);
+            Logger.LogInformation(message);
             
             // For debugging, let's also try to get contacts directly
             if (isConnected)
             {
+                Logger.LogInformation("API connection successful, reloading contacts...");
                 await LoadContacts();
+                StateHasChanged();
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ API test error: {ex.Message}");
+            var errorMessage = $"❌ API test error: {ex.Message}";
+            Console.WriteLine(errorMessage);
+            Logger.LogError(ex, "API connection test failed");
         }
     }
 }

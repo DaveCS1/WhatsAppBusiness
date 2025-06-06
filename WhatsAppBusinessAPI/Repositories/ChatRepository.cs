@@ -53,7 +53,7 @@ namespace WhatsAppBusinessAPI.Repositories
         {
             using var connection = await GetOpenConnectionAsync();
             return await connection.QueryAsync<Message>(
-                "SELECT * FROM Messages WHERE ContactId = @ContactId ORDER BY Timestamp ASC", new { contactId });
+                "SELECT * FROM Messages WHERE ContactId = @ContactId ORDER BY Timestamp ASC", new { ContactId = contactId });
         }
 
         public async Task<Contact> GetOrCreateContactAsync(string waId, string displayName)

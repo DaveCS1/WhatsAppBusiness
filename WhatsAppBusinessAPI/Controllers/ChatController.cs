@@ -100,6 +100,63 @@ namespace WhatsAppBusinessAPI.Controllers
             }
         }
 
+        [HttpPost("send-reply")]
+        public async Task<IActionResult> SendReply([FromBody] SendReplyRequest request)
+        {
+            if (request.ContactId <= 0 || string.IsNullOrEmpty(request.Message))
+            {
+                return BadRequest("Contact ID and message are required.");
+            }
+
+            try
+            {
+                _logger.LogInformation("Sending reply to contact {ContactId}: {Message}", request.ContactId, request.Message);
+
+                // Get the contact to find the WaId
+                var contacts = await _chatRepository.GetContactsAsync();
+                var contact = contacts.FirstOrDefault(c => c.Id == request.ContactId);
+                
+                if (contact == null)
+                {
+                    return NotFound($"Contact with ID {request.ContactId} not found.");
+                }
+
+                bool sent = await _whatsAppService.SendMessageAsync(contact.WaId, request.Message);
+                
+                if (sent)
+                {
+                    // Save outgoing message to DB
+                    var outgoingMessage = new Message
+                    {
+                        WaMessageId = $"agent-reply-{Guid.NewGuid()}",
+                        ContactId = contact.Id,
+                        Body = request.Message,
+                        IsFromMe = true,
+                        Timestamp = DateTime.UtcNow,
+                        Status = "sent"
+                    };
+                    await _chatRepository.SaveMessageAsync(outgoingMessage);
+
+                    // Update contact's last message timestamp
+                    contact.LastMessageTimestamp = DateTime.UtcNow;
+                    await _chatRepository.UpdateContactAsync(contact);
+
+                    _logger.LogInformation("Reply sent successfully to contact {ContactId}", request.ContactId);
+                    return Ok(new { success = true, message = "Reply sent successfully.", messageId = outgoingMessage.Id });
+                }
+                else
+                {
+                    _logger.LogWarning("Failed to send reply to contact {ContactId}", request.ContactId);
+                    return StatusCode(500, "Failed to send message via WhatsApp API.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error sending reply to contact {ContactId}: {ErrorMessage}", request.ContactId, ex.Message);
+                return StatusCode(500, "Internal server error while sending reply.");
+            }
+        }
+
         [HttpGet("logs")]
         public async Task<ActionResult<IEnumerable<AutomatedResponseLog>>> GetAutomatedResponseLogs([FromQuery] int limit = 100)
         {
@@ -220,6 +277,12 @@ namespace WhatsAppBusinessAPI.Controllers
     {
         public string ToWaId { get; set; } = string.Empty;
         public string MessageBody { get; set; } = string.Empty;
+    }
+
+    public class SendReplyRequest
+    {
+        public int ContactId { get; set; }
+        public string Message { get; set; } = string.Empty;
     }
 
     public class UpdateContactRequest

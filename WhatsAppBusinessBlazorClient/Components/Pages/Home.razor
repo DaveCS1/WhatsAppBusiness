@@ -1,5 +1,7 @@
 @page "/"
+@rendermode InteractiveServer
 @inject ApiService ApiService
+@inject ILogger<Home> Logger
 
 <PageTitle>WhatsApp Business Dashboard</PageTitle>
 
@@ -116,11 +118,26 @@
     private bool isChecking = false;
     private SystemStats? stats;
 
+    protected override async Task OnInitializedAsync()
+    {
+        Logger.LogInformation("Home component initializing...");
+        // Start checking connection immediately
+        _ = Task.Run(async () =>
+        {
+            await CheckConnection();
+        });
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await CheckConnection();
+            Logger.LogInformation("Home component first render completed");
+            // If connection check hasn't completed yet, ensure it runs
+            if (connectionStatus == "Checking connection...")
+            {
+                await CheckConnection();
+            }
         }
     }
 
@@ -128,22 +145,27 @@
     {
         isChecking = true;
         connectionStatus = "Checking connection...";
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
 
         try
         {
+            Logger.LogInformation("Testing API connection...");
             isApiConnected = await ApiService.TestApiConnectionAsync();
             connectionStatus = isApiConnected ? "✅ Connected to API" : "❌ API not responding";
+            Logger.LogInformation("API connection test result: {IsConnected}", isApiConnected);
             
             if (isApiConnected)
             {
                 // Try to load stats
                 try
                 {
+                    Logger.LogInformation("Loading system stats...");
                     stats = await ApiService.GetSystemStatsAsync();
+                    Logger.LogInformation("System stats loaded successfully");
                 }
-                catch
+                catch (Exception statsEx)
                 {
+                    Logger.LogWarning(statsEx, "Failed to load system stats, but API connection works");
                     // Stats not available, but connection works
                 }
             }
@@ -154,6 +176,7 @@
         }
         catch (Exception ex)
         {
+            Logger.LogError(ex, "API connection test failed: {Message}", ex.Message);
             isApiConnected = false;
             connectionStatus = $"❌ Connection failed: {ex.Message}";
             stats = null;
@@ -161,7 +184,7 @@
         finally
         {
             isChecking = false;
-            StateHasChanged();
+            await InvokeAsync(StateHasChanged);
         }
     }
 } 

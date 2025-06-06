@@ -4,8 +4,8 @@ using WhatsAppBusinessAPI.Repositories;
 
 namespace WhatsAppBusinessAPI.Controllers
 {
+    [Route("api/test")]
     [ApiController]
-    [Route("api/[controller]")]
     public class TestController : ControllerBase
     {
         private readonly ChatRepository _chatRepository;
@@ -108,16 +108,32 @@ namespace WhatsAppBusinessAPI.Controllers
         [HttpGet("sample-messages")]
         public IActionResult GetSampleMessages()
         {
+            _logger.LogInformation("Test endpoint called - API is working");
+            
             var sampleMessages = new[]
             {
-                new { contactId = "test001", contactName = "Alice Johnson", message = "Hi! I'm Alice and I'd love to book a food tour for tomorrow around 2 PM." },
-                new { contactId = "test002", contactName = "Bob Smith", message = "Hello, my name is Bob. I'm interested in a walking tour this weekend morning." },
-                new { contactId = "test003", contactName = "Carol Davis", message = "Hi there! I'm Carol and I want to do a historical tour on Friday evening." },
-                new { contactId = "test004", contactName = "David Wilson", message = "Hello! I'm David. Can I book an art tour for today afternoon?" },
-                new { contactId = "test005", contactName = "Eva Brown", message = "Hi! I'm Eva and I'd like a photography tour on Monday at 9 AM." }
+                new { id = 1, message = "API is working correctly", timestamp = DateTime.UtcNow },
+                new { id = 2, message = "Test endpoint responding", timestamp = DateTime.UtcNow.AddMinutes(-1) }
             };
 
-            return Ok(sampleMessages);
+            return Ok(new { 
+                status = "success", 
+                message = "API is working correctly",
+                timestamp = DateTime.UtcNow,
+                data = sampleMessages
+            });
+        }
+
+        [HttpGet("health")]
+        public IActionResult HealthCheck()
+        {
+            _logger.LogInformation("Health check endpoint called");
+            
+            return Ok(new { 
+                status = "healthy", 
+                timestamp = DateTime.UtcNow,
+                version = "1.0.0"
+            });
         }
 
         [HttpPost("create-sample-data")]
