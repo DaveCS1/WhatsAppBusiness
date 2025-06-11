@@ -1,97 +1,175 @@
-# WhatsApp Business Automation Solution
+# WhatsApp Business & Tour Management Solution
 
-A comprehensive WhatsApp Business automation system with AI-powered message processing, automated tour booking responses, message template management, comprehensive export capabilities, and real-time admin interface.
+A comprehensive tour management system with WhatsApp Business automation, AI-powered message processing, guide assignment management, SMS notifications, and advanced analytics dashboard.
+
+## 🔗 **Live Applications & Documentation**
+
+| Resource | URL | Status |
+|----------|-----|--------|
+| 🌐 **Blazor Admin Interface** | [https://whatsapp-business-client.azurewebsites.net](https://whatsapp-business-client.azurewebsites.net) | ✅ Live |
+| 🔧 **API Documentation (Swagger)** | [https://whatsapp-business-api.azurewebsites.net/swagger](https://whatsapp-business-api.azurewebsites.net/swagger) | ✅ Live |
+| 📡 **API Base URL** | `https://whatsapp-business-api.azurewebsites.net` | ⚠️ Not Browsable |
+| 📂 **GitHub Repository** | [https://github.com/DaveCS1/WhatsAppBusiness](https://github.com/DaveCS1/WhatsAppBusiness) | ⚠️ Public Branch Outdated |
+
+> **Note**: The API base URL is not directly browsable - use the Swagger documentation above to explore available endpoints.
+
+> **⚠️ Security Notice**: The public GitHub repository contains an older version of the codebase. The current production version with all enterprise features documented below has not been pushed to the public branch due to security considerations (API keys, deployment configurations, etc.). Please contact the repository owner for access to the latest codebase.
 
 ## 🎯 **Project Status: Production Ready - Full Feature Complete**
 
-### ✅ **Completed System - All Phases Complete**
+### ✅ **Completed System - Enterprise-Grade Tour Management Platform**
+
+This solution has evolved beyond simple WhatsApp automation into a complete tour management platform with:
 
 #### **Phase 1: Database Foundation** ✅
-- ✅ SQLite database with comprehensive schema
+- ✅ SQLite database with comprehensive schema (11 tables)
 - ✅ Database initialization and verification system
-- ✅ All data models implemented (`Contact`, `Message`, `TourDetails`, `AutomatedResponseLog`, `MessageTemplates`)
+- ✅ Core models: `Contact`, `Message`, `TourDetails`, `AutomatedResponseLog`, `MessageTemplates`
+- ✅ Extended models: `Guides`, `Guests`, `TourAssignments`, `GuideReassignments`
+- ✅ Sample data with 8 tour configurations and guide/guest records
 
 #### **Phase 2: Core API Implementation** ✅
-- ✅ **Data Access Layer**: `ChatRepository` with comprehensive Dapper methods
+- ✅ **Data Access Layer**: `ChatRepository` with comprehensive Dapper methods (567 lines)
 - ✅ **Business Services**:
-  - `WhatsAppService` - Meta Graph API integration
-  - `AiExtractionService` - Gemini AI integration with JSON schema
-  - `TourPresetsService` - Smart tour matching logic
+  - `WhatsAppService` - Meta Graph API integration (213 lines)
+  - `AiExtractionService` - Gemini AI integration with JSON schema (169 lines)
+  - `TourPresetsService` - Smart tour matching logic (223 lines)
 - ✅ **API Controllers**:
-  - `WhatsappWebhookController` - Main webhook handler with full processing pipeline
-  - `ChatController` - REST API for admin interface
-  - `TemplatesController` - Message template management
-  - `ExportsController` - Comprehensive data export system
-- ✅ **Configuration**: All services registered, CORS configured
+  - `WhatsappWebhookController` - Full webhook processing pipeline (373 lines)
+  - `ChatController` - Complete REST API for admin interface (635 lines)
+  - `TemplatesController` - Message template management (220 lines)
+  - `ExportsController` - Comprehensive data export system (297 lines)
+  - `PeopleController` - Guide and guest management (374 lines)
+  - `AssignmentsController` - Tour assignment management (323 lines)
+  - `ToursController` - Tour management operations (103 lines)
+  - `TestController` - API testing and diagnostics (147 lines)
 
 #### **Phase 3: Blazor Admin Interface** ✅
-- ✅ **Complete Admin Dashboard**: Real-time chat management, analytics, and system monitoring
-- ✅ **Message Templates Management**: Create, edit, and manage automated response templates
-- ✅ **Comprehensive Export System**: 5 different export types with multiple formats
-- ✅ **Real-time Status Indicators**: API connectivity, database health, and system status
-- ✅ **Professional UI**: Bootstrap 5 with responsive design and modern UX
+- ✅ **Complete Admin Dashboard**: Real-time management interface with 25+ pages
+- ✅ **Core Pages**:
+  - `Home.razor` - Dashboard with system statistics (387 lines)
+  - `Chat.razor` - WhatsApp conversation management (467 lines)
+  - `Analytics.razor` - Advanced analytics with interactive drill-down (1044 lines)
+  - `Templates.razor` - Message template management (416 lines)
+  - `Exports.razor` - Comprehensive data export system (662 lines)
+- ✅ **People Management System**:
+  - `People.razor` - Overview dashboard (190 lines)
+  - `GuideManagement.razor` - Complete guide CRUD operations (330 lines)
+  - `GuestManagement.razor` - Guest management system (389 lines)
+  - `GuideDetails.razor` - Detailed guide profiles (266 lines)
+  - `GuestDetails.razor` - Detailed guest profiles (292 lines)
+- ✅ **Assignment Management**:
+  - `AssignmentManagement.razor` - Tour assignment dashboard (423 lines)
+  - `AssignmentDetails.razor` - Detailed assignment tracking (324 lines)
+  - `QuickAssignmentModal.razor` - Rapid assignment creation (665 lines)
+  - `ReassignmentModal.razor` - Guide reassignment workflow (397 lines)
+  - `GuideScheduleModal.razor` - Schedule management (337 lines)
+- ✅ **Communication System**:
+  - `TwilioSms.razor` - SMS messaging interface (462 lines)
+  - `CheckFrontApi.razor` - External API integration (148 lines)
 
 #### **Phase 4: Advanced Features** ✅
 - ✅ **Template System**: Dynamic message templates with placeholder variables
-- ✅ **Export Capabilities**: Tours, Contacts, Messages, Guide Communications, Analytics
-- ✅ **Advanced Analytics**: Performance tracking, business intelligence, and interactive drill-down
-- ✅ **Detailed Log Analysis**: Interactive modal dialogs for comprehensive response inspection
+- ✅ **Export Capabilities**: 5 export types with multiple formats (CSV, JSON, Text)
+- ✅ **Advanced Analytics**: Performance tracking, business intelligence, interactive drill-down
+- ✅ **People Management**: Complete CRUD for guides and guests with specialties tracking
+- ✅ **Assignment System**: Tour assignment with reassignment workflow and confirmation tracking
+- ✅ **SMS Integration**: Twilio integration for guide notifications and confirmations
 - ✅ **Production Deployment**: Azure-ready with CI/CD pipeline
 
 ### 🚀 **Current System Capabilities**
 
 The complete system now provides:
-- ✅ **AI-Powered Message Processing**: Automatic extraction of customer intent and booking details
+
+#### **WhatsApp Business Automation**
+- ✅ **AI-Powered Message Processing**: Automatic extraction of customer intent using Gemini 2.0 Flash
 - ✅ **Automated Tour Booking Responses**: Intelligent matching and instant responses
 - ✅ **Message Template Management**: Customizable templates with dynamic content
-- ✅ **Comprehensive Export System**: Multiple data export formats for business operations
-- ✅ **Real-time Admin Interface**: Complete management dashboard
-- ✅ **Advanced Analytics & Reporting**: Performance tracking, business insights, and detailed log analysis
-- ✅ **Production-Ready Deployment**: Azure App Service integration
+- ✅ **Real-time Chat Interface**: Complete conversation management
 
-### 📊 **Export System Features**
+#### **Tour Management Platform**
+- ✅ **Guide Management**: Complete CRUD operations with specialties, contact info, and availability
+- ✅ **Guest Management**: Customer profiles with booking history and preferences
+- ✅ **Tour Assignment System**: Assign guides to tours with full audit trail
+- ✅ **Reassignment Workflow**: Handle guide changes with confirmation tracking
+- ✅ **Schedule Management**: Visual guide schedules and availability tracking
 
-The system provides 5 comprehensive export types:
+#### **Communication & Notifications**
+- ✅ **SMS Integration**: Twilio-powered SMS for guide notifications
+- ✅ **Confirmation System**: Guide assignment confirmations via SMS with web links
+- ✅ **Multi-channel Communication**: WhatsApp, SMS, and in-person confirmation tracking
 
-1. **Tours Export**: Complete tour booking data with participant details
-2. **Contacts Export**: Customer information with tour preferences and contact details
-3. **Messages Export**: Full WhatsApp conversation history with metadata
-4. **Guide Messages Export**: Formatted communications for easy forwarding to tour guides
-5. **Automated Responses Export**: AI processing analytics and system performance data
+#### **Analytics & Reporting**
+- ✅ **Advanced Analytics Dashboard**: Performance metrics, business intelligence
+- ✅ **Interactive Log Analysis**: Detailed response inspection with modal dialogs
+- ✅ **Export System**: 5 comprehensive export types with multiple formats
+- ✅ **System Monitoring**: Real-time API connectivity and database health
 
-Each export supports multiple formats: CSV, JSON, and formatted text.
-
-### 🎨 **Template Management System**
-
-- **Dynamic Templates**: Create templates with placeholder variables for personalized responses
-- **Template Categories**: Organize templates by type (Tour Confirmation, General, Booking, etc.)
-- **Live Preview**: Real-time preview of templates with sample data
-- **Version Control**: Track template changes and maintain consistency
+#### **Production-Ready Infrastructure**
+- ✅ **Azure App Service Integration**: Fully configured for cloud deployment
+- ✅ **GitHub Actions CI/CD**: Automatic deployment pipeline
+- ✅ **Professional UI**: Bootstrap 5 with responsive design and modern UX
+- ✅ **Error Handling**: Comprehensive error management and recovery
 
 ## 🏗️ **Architecture Overview**
 
 ### **Solution Structure**
 ```
 WhatsAppBusiness/
-├── WhatsAppBusinessAPI/           # ASP.NET Core Web API
-│   ├── Controllers/               # API Controllers (Webhook, Chat, Templates, Exports)
+├── WhatsAppBusinessAPI/           # ASP.NET Core Web API (8 Controllers, 4 Services)
+│   ├── Controllers/               # API Controllers
+│   │   ├── WhatsappWebhookController.cs    # WhatsApp webhook processing
+│   │   ├── ChatController.cs               # Chat management API
+│   │   ├── TemplatesController.cs          # Message templates
+│   │   ├── ExportsController.cs            # Data export system
+│   │   ├── PeopleController.cs             # Guide/Guest management
+│   │   ├── AssignmentsController.cs        # Tour assignments
+│   │   ├── ToursController.cs              # Tour management
+│   │   └── TestController.cs               # API testing
 │   ├── Services/                  # Business Logic Services
+│   │   ├── WhatsAppService.cs              # Meta Graph API integration
+│   │   ├── AiExtractionService.cs          # Gemini AI processing
+│   │   ├── TourPresetsService.cs           # Tour matching logic
+│   │   └── DbInitializer.cs                # Database setup
 │   ├── Repositories/              # Data Access Layer
-│   ├── Models/                    # Data Models & Export Models
+│   │   └── ChatRepository.cs               # Comprehensive data access (567 lines)
+│   ├── Models/                    # Data Models (11 model classes)
 │   └── Data/                      # Database & Scripts
-└── WhatsAppBusinessBlazorClient/  # Blazor Server Admin UI
-    ├── Pages/                     # Blazor Pages (Chat, Analytics, Templates, Exports)
-    ├── Components/                # Reusable Components
-    └── Services/                  # Client-side Services
+└── WhatsAppBusinessBlazorClient/  # Blazor Server Admin UI (25+ Pages)
+    ├── Components/Pages/          # Blazor Pages
+    │   ├── Home.razor                      # Dashboard
+    │   ├── Chat.razor                      # WhatsApp management
+    │   ├── Analytics.razor                 # Advanced analytics
+    │   ├── Templates.razor                 # Template management
+    │   ├── Exports.razor                   # Data exports
+    │   ├── People.razor                    # People overview
+    │   ├── GuideManagement.razor           # Guide CRUD
+    │   ├── GuestManagement.razor           # Guest CRUD
+    │   ├── AssignmentManagement.razor      # Assignment dashboard
+    │   ├── TwilioSms.razor                 # SMS interface
+    │   └── [20+ additional pages]
+    ├── Services/                  # Client-side Services
+    │   ├── ApiService.cs                   # HTTP client (490 lines)
+    │   ├── TwilioService.cs                # SMS service
+    │   └── ToastService.cs                 # UI notifications
+    └── Models/                    # Client-side Models
 ```
+
+### **Database Schema (11 Tables)**
+- **Core WhatsApp**: `Contacts`, `Messages`, `AutomatedResponseLog`, `MessageTemplates`
+- **Tour Management**: `TourDetails`, `TourAssignments`, `GuideReassignments`
+- **People Management**: `Guides`, `Guests`
+- **System**: `SystemSettings`
 
 ### **Key Technologies**
 - **Backend**: ASP.NET Core 8.0, SQLite, Dapper
 - **AI Integration**: Google Gemini 2.0 Flash with JSON Schema
 - **WhatsApp**: Meta Graph API v19.0
+- **SMS**: Twilio API integration
 - **Frontend**: Blazor Server, Bootstrap 5
 - **Database**: SQLite with comprehensive logging and analytics
 - **Export**: CSV, JSON, and formatted text generation
+- **Deployment**: Azure App Services with GitHub Actions CI/CD
 
 ## 🔧 **Configuration Required**
 
@@ -110,13 +188,28 @@ WhatsAppBusiness/
   },
   "AiApi": {
     "Endpoint": "https://generativelanguage.googleapis.com/v1beta/models/",
-    "ApiKey": "YOUR_AI_API_KEY",
+    "ApiKey": "YOUR_GEMINI_API_KEY",
     "Model": "gemini-2.0-flash"
   }
 }
 ```
 
-## 📊 **Database Schema**
+### **Blazor Client Configuration (`appsettings.json`)**
+```json
+{
+  "ApiSettings": {
+    "BaseUrl": "http://localhost:5260"
+  },
+  "TwilioSettings": {
+    "AccountSid": "YOUR_TWILIO_ACCOUNT_SID",
+    "AuthToken": "YOUR_TWILIO_AUTH_TOKEN",
+    "FromPhoneNumber": "YOUR_TWILIO_PHONE_NUMBER",
+    "IsTestMode": false
+  }
+}
+```
+
+## 📊 **Database Schema Details**
 
 ### **Core Tables**
 - **Contacts**: WhatsApp contacts with AI-extracted user information
@@ -125,23 +218,46 @@ WhatsAppBusiness/
 - **AutomatedResponseLog**: Comprehensive logging of all automated responses
 - **MessageTemplates**: Customizable message templates with dynamic placeholders
 
+### **People Management Tables**
+- **Guides**: Tour guide profiles with specialties and contact information
+- **Guests**: Customer profiles with booking history
+- **TourAssignments**: Tour-to-guide assignments with reassignment tracking
+- **GuideReassignments**: Detailed reassignment workflow with confirmation status
+
 ### **Sample Data Included**
 - 8 sample tour configurations (Walking, Food, Historical, Art tours)
-- 3 default message templates (Tour Confirmation, General Welcome, Booking Confirmation)
+- Sample guide profiles with different specialties
+- Sample guest records with booking history
+- 5 default message templates with placeholder variables
 - System settings for configuration management
 
 ## 📋 **API Endpoints**
 
-### **Webhook Endpoints**
+### **WhatsApp Webhook Endpoints**
 - `GET /api/whatsapp/webhook` - Webhook verification
 - `POST /api/whatsapp/webhook` - Message processing
 
-### **Admin API Endpoints**
+### **Chat Management Endpoints**
 - `GET /api/chat/contacts` - Get all contacts
 - `GET /api/chat/messages/{contactId}` - Get messages for contact
 - `POST /api/chat/send` - Send manual message
 - `GET /api/chat/logs` - Get automated response logs
 - `GET /api/chat/stats` - Get system statistics
+
+### **People Management Endpoints**
+- `GET /api/people/guides` - Get all guides
+- `POST /api/people/guides` - Create new guide
+- `PUT /api/people/guides/{id}` - Update guide
+- `DELETE /api/people/guides/{id}` - Delete guide
+- `GET /api/people/guests` - Get all guests
+- `POST /api/people/guests` - Create new guest
+
+### **Assignment Management Endpoints**
+- `GET /api/assignments` - Get all tour assignments
+- `POST /api/assignments` - Create new assignment
+- `PUT /api/assignments/{id}` - Update assignment
+- `POST /api/assignments/{id}/reassign` - Reassign guide
+- `GET /api/assignments/guide/{guideId}` - Get assignments for guide
 
 ### **Template Management Endpoints**
 - `GET /api/templates` - Get all message templates
@@ -178,12 +294,18 @@ WhatsAppBusiness/
 - **Message History**: Complete conversation history with drill-down capabilities
 - **Template Usage**: Track which templates are most effective with usage analytics
 
-### **Export Capabilities**
-- **Tour Data**: Complete booking information with participant details
-- **Customer Data**: Contact information with preferences and history
-- **Communication Logs**: Full message history with metadata
-- **Guide Communications**: Formatted messages for easy forwarding
-- **Performance Analytics**: System metrics and AI processing data
+### **People Management Analytics**
+- **Guide Performance**: Track guide assignments, confirmations, and availability
+- **Guest Analytics**: Booking patterns, preferences, and customer lifetime value
+- **Assignment Metrics**: Success rates, reassignment frequency, and confirmation times
+- **Communication Tracking**: SMS delivery rates, confirmation response times
+
+### **Export System (5 Types)**
+1. **Tours Export**: Complete tour booking data with participant details
+2. **Contacts Export**: Customer information with tour preferences and contact details
+3. **Messages Export**: Full WhatsApp conversation history with metadata
+4. **Guide Messages Export**: Formatted communications for easy forwarding to tour guides
+5. **Automated Responses Export**: AI processing analytics and system performance data
 
 ### **Export Formats**
 - **CSV**: Spreadsheet-compatible format for data analysis
@@ -193,15 +315,26 @@ WhatsAppBusiness/
 ## 🎨 **Admin Interface Features**
 
 ### **Dashboard Pages**
-- **Chat Management**: Real-time conversation monitoring and manual messaging
+- **Home Dashboard**: System overview with real-time statistics and health monitoring
+- **Chat Management**: Real-time WhatsApp conversation monitoring and manual messaging
 - **Advanced Analytics**: System performance metrics, business intelligence, and interactive log analysis
 - **Templates**: Message template creation and management with live preview
 - **Exports**: Comprehensive data export with multiple format options
-- **API Testing**: Development and debugging tools
 
-### **Interactive Analytics Features**
-- **Clickable Log Entries**: Click any automated response in the analytics table to view detailed information
-- **Comprehensive Modal Dialogs**: Full-screen dialogs showing complete response details, AI data, and performance metrics
+### **People Management Interface**
+- **Guide Management**: Complete CRUD operations with specialties, availability, and performance tracking
+- **Guest Management**: Customer profiles with booking history and preferences
+- **Assignment Dashboard**: Visual tour assignment management with drag-and-drop interface
+- **Schedule Management**: Guide availability and tour scheduling with calendar views
+
+### **Communication Interface**
+- **SMS Dashboard**: Send SMS notifications to guides with delivery tracking
+- **Confirmation System**: Track guide confirmations with web-based confirmation links
+- **Multi-channel Tracking**: Monitor communications across WhatsApp, SMS, and in-person channels
+
+### **Interactive Features**
+- **Clickable Log Entries**: Click any automated response in analytics for detailed information
+- **Comprehensive Modal Dialogs**: Full-screen dialogs with complete response details and performance metrics
 - **Copy to Clipboard**: One-click copying of response text for easy sharing or analysis
 - **Individual Log Export**: Export detailed information for specific automated responses
 - **Performance Ratings**: Real-time efficiency and speed ratings for each response
@@ -213,6 +346,7 @@ WhatsAppBusiness/
 - **Professional UI**: Modern Bootstrap 5 design with intuitive navigation
 - **Interactive Elements**: Hover effects, clickable rows, and smooth modal transitions
 - **Error Handling**: Comprehensive error messages and recovery options
+- **Toast Notifications**: Real-time feedback for user actions
 
 ## 🚀 **Production Deployment**
 
@@ -222,9 +356,10 @@ WhatsAppBusiness/
 
 ### **Deployment Features:**
 - ✅ **GitHub Actions CI/CD**: Automatic deployment on `main` branch push
-- ✅ **PowerShell Scripts**: Local deployment automation
-- ✅ **Visual Studio Integration**: Direct publish from IDE
+- ✅ **PowerShell Scripts**: Local deployment automation (`deploy-azure.ps1`)
+- ✅ **Visual Studio Integration**: Direct publish from IDE with publish profiles
 - ✅ **Production Configurations**: Optimized for Azure Windows App Services
+- ✅ **Environment-specific Settings**: Separate configurations for Development/Production
 
 ### **GitHub Actions Setup:**
 Add these secrets to your GitHub repository (Settings → Secrets and variables → Actions):
@@ -240,12 +375,17 @@ Add these secrets to your GitHub repository (Settings → Secrets and variables 
 # Deploy specific service
 .\deploy-azure.ps1 -ApiOnly
 .\deploy-azure.ps1 -ClientOnly
+
+# Build locally
+.\build.ps1
+.\build.ps1 -Configuration Release
 ```
 
 ### **Production Configuration:**
 Update these values in production `appsettings.json` files:
-- WhatsApp API credentials
+- WhatsApp API credentials (Token, Secret, Verify Token, Phone Number ID)
 - Gemini AI API key
+- Twilio credentials (Account SID, Auth Token, Phone Number)
 - Any environment-specific settings
 
 ## 🎯 **Business Value Delivered**
@@ -256,16 +396,31 @@ Update these values in production `appsettings.json` files:
 - **Scalable Operations**: Handle unlimited inquiries without staff increase
 - **Consistent Quality**: Every customer receives professional, detailed information
 
+### **Tour Management Automation**
+- **Guide Assignment System**: Streamlined tour-to-guide assignments with full audit trail
+- **Reassignment Workflow**: Handle guide changes with confirmation tracking
+- **SMS Notifications**: Automatic guide notifications with confirmation links
+- **Schedule Management**: Visual guide availability and conflict resolution
+
 ### **Data Management & Analytics**
 - **Complete Customer Profiles**: AI-extracted information with conversation history
+- **Guide Performance Tracking**: Assignment success rates, confirmation times, availability
 - **Export Capabilities**: Easy data integration with existing business systems
 - **Performance Tracking**: Monitor system effectiveness and customer satisfaction
 - **Business Intelligence**: Identify trends and optimize tour offerings
 
-### **Template & Communication Management**
+### **Communication Management**
+- **Multi-channel Integration**: WhatsApp, SMS, and in-person communication tracking
 - **Customizable Templates**: Maintain brand consistency across all communications
 - **Dynamic Content**: Personalized responses with customer-specific information
 - **Guide Integration**: Formatted communications for easy forwarding to tour guides
-- **Multi-format Exports**: Support for various business workflow requirements
+- **Confirmation System**: Web-based confirmation links with automatic tracking
+
+### **Enterprise Features**
+- **Comprehensive Audit Trail**: Track all changes, assignments, and communications
+- **Role-based Access**: Different access levels for different user types
+- **Real-time Monitoring**: System health, API connectivity, and performance metrics
+- **Scalable Architecture**: Designed to handle growth in tours, guides, and customers
+- **Production-ready Deployment**: Azure integration with CI/CD pipeline
 
 **See [`BUILD.md`](BUILD.md) for complete deployment instructions.**
